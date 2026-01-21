@@ -18,7 +18,7 @@ body {
     border: 1px solid black;
 }
 
-.gameColumnHints {
+.gameColHints {
     border: 1px solid black;
     background-color: bisque;
 }
@@ -26,6 +26,20 @@ body {
 .gameRowHints {
     border: 1px solid black;
     background-color: bisque;
+}
+
+.gameRowHintRow {
+
+}
+
+.gameRowHintBox {
+    font-size: 12px;
+    border: 1px solid black;
+    height: 15px;
+    width: 15px;
+    padding: 4px;
+    display: inline-block;
+    text-align: center;
 }
 
 .innerGameWrapper {
