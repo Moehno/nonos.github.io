@@ -1,3 +1,37 @@
+body {
+    margin: 0;
+}
+
+.outerGameWrapper {
+    border: 1px solid black;;
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    grid-template-rows: 1fr 3fr;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.gamePreview {
+    aspect-ratio: 1 / 1;
+    border: 1px solid black;
+}
+
+.gameColumnHints {
+    border: 1px solid black;
+    background-color: bisque;
+}
+
+.gameRowHints {
+    border: 1px solid black;
+    background-color: bisque;
+}
+
+.innerGameWrapper {
+    
+}
+
 .gameRow {
     display: flex;
 }
@@ -6,6 +40,7 @@
     height: 15px;
     width: 15px;
     border: 1px solid black;
+    border-collapse: separate;
     padding: 4px;
 }
 
