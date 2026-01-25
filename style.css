@@ -1,12 +1,13 @@
 body {
     margin: 0;
+    text-align: center;
 }
 
 .outerGameWrapper {
     border: 1px solid black;;
     display: grid;
-    grid-template-columns: 1fr 3fr;
-    grid-template-rows: 1fr 3fr;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
     position: fixed;
     top: 50%;
     left: 50%;
@@ -14,36 +15,61 @@ body {
 }
 
 .gamePreview {
-    aspect-ratio: 1 / 1;
-    border: 1px solid black;
+    /* aspect-ratio: 1 / 1; */
+    border: 2px solid black;
 }
 
 .gameColHints {
+    display: flex;
+    flex-direction: row;
     border: 1px solid black;
     background-color: bisque;
 }
 
+.gameColHintCol {
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+}
+
+.gameColHintBox {
+    right: 100%;
+    font-size: 11px;
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+    height: 15px;
+    width: 15px;
+    padding: 4px;
+    display: flex;
+}
+
 .gameRowHints {
+    display: flex;
+    flex-direction: column;
     border: 1px solid black;
     background-color: bisque;
 }
 
 .gameRowHintRow {
-
+    display: flex;
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
 }
 
 .gameRowHintBox {
-    font-size: 12px;
-    border: 1px solid black;
+    display: flex;
+    font-size: 11px;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
     height: 15px;
     width: 15px;
     padding: 4px;
     display: inline-block;
-    text-align: center;
 }
 
 .innerGameWrapper {
-    
+    border: 1px solid black;
 }
 
 .gameRow {
@@ -54,7 +80,6 @@ body {
     height: 15px;
     width: 15px;
     border: 1px solid black;
-    border-collapse: separate;
     padding: 4px;
 }
 
