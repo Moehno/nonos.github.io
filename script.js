@@ -26,27 +26,36 @@ function createBoard(selectedRows, selectedCols) {
     maxCols = selectedCols;
 
     // create the DOM elements for the board and insert board into DOM
-    for (let k = 0; k < selectedRows; k++) {
+    for (let i = 0; i < selectedRows; i++) {
         const newRow = document.createElement("div");
         newRow.classList.add("gameRow");
 
-        const newRowHintRow = document.createElement("div");
-        newRowHintRow.classList.add("gameRowHintRow");
-        tempRowHintsInDocument.appendChild(newRowHintRow);
-
-        for (let l = 0; l < selectedCols; l++) {
+        for (let j = 0; j < selectedCols; j++) {
             const newBox = document.createElement("div");
             newBox.classList.add("gameBox");
-            newBox.dataset.row = k;
-            newBox.dataset.col = l;
+            newBox.dataset.row = i;
+            newBox.dataset.col = j;
             newRow.appendChild(newBox);
         }
 
         tempInnerGameWrapper.appendChild(newRow);
     }
 
+    for (let i = 0; i < selectedRows; i++) {
+        const newRowHintRow = document.createElement("div");
+        newRowHintRow.classList.add("gameRowHintRow");
+        tempRowHintsInDocument.appendChild(newRowHintRow);
+    }
+
+    for (let i = 0; i < selectedCols; i++) {
+        const newColHintCol = document.createElement("div");
+        newColHintCol.classList.add("gameColHintCol");
+        tempColHintsInDocument.appendChild(newColHintCol);
+    }
+
     innerGameWrapper.innerHTML = tempInnerGameWrapper.innerHTML;
     rowHintsInDocument.innerHTML = tempRowHintsInDocument.innerHTML;
+    colHintsInDocument.innerHTML = tempColHintsInDocument.innerHTML;
 
     // assign DOM board to a variable as a 2D array
     boardInDocument = Array.from(document.getElementById("innerGameWrapper").querySelectorAll(".gameRow"));
@@ -54,14 +63,23 @@ function createBoard(selectedRows, selectedCols) {
         Array.from(gameRow.querySelectorAll(".gameBox"))
     );
 
-    // create intern board as 2D array for faster calculations
+    // create intern arrays for faster calculations
+    // create intern board
     for (let i = 0; i < selectedRows; i++) {
         board[i] = [];
-        rowHints[i] = [];
         for (let j = 0; j < selectedCols; j++) {
             board[i][j] = 0;
-            colHints[j] = [];
         }
+    }
+
+    // create intern rowHints
+    for (let i = 0; i < selectedRows; i++) {
+        rowHints[i] = [];
+    }
+
+    // create intern colHints
+    for (let i = 0; i < selectedCols; i++) {
+        colHints[i] = [];
     }
 }
 
@@ -142,30 +160,54 @@ function getHint(row, col) {
 
 function renderHint(row, col) {
     const rowHintRowsInDocument = Array.from(document.getElementById("gameRowHints").querySelectorAll(".gameRowHintRow"));
+    const colHintColsInDocument = Array.from(document.getElementById("gameColHints").querySelectorAll(".gameColHintCol"));
     const rowHintAmount = getLargestSubarrayLength(rowHints);
+    const colHintAmount = getLargestSubarrayLength(colHints);
 
+    // render row hint
     // render empty boxes
     rowHints.forEach((element, index) => {
         const tempRowHintRowInDocument = document.createElement("div");
+
         for (i = 0; i < rowHintAmount; i++) {
             const newHintBox = document.createElement("div");
             newHintBox.classList.add("gameRowHintBox");
             tempRowHintRowInDocument.appendChild(newHintBox);
         }
+
         rowHintRowsInDocument[index].innerHTML = tempRowHintRowInDocument.innerHTML;
     });
 
     // enter numbers into each box
-    rowHints.forEach((element, i) => {
-        // console.log(element)
-        element.forEach((e, j) => {
-            console.log(rowHintRowsInDocument[i].children[j]);
-            rowHintRowsInDocument[i].children[j].textContent = e;
-            console.log(e)
-        })
+    rowHints.forEach((row, i) => {
+
+        for (j = 1; j <= row.length; j++) {
+            rowHintRowsInDocument[i].children[rowHintAmount - j].textContent = row[row.length - j];
+        }
     });
 
     // render col hint
+    // render empty boxes
+    colHints.forEach((element, index) => {
+        const tempColHintColInDocument = document.createElement("div");
+
+        for (i = 0; i < colHintAmount; i++) {
+            const newHintBox = document.createElement("div");
+            newHintBox.classList.add("gameColHintBox");
+            tempColHintColInDocument.appendChild(newHintBox);
+        }
+
+        colHintColsInDocument[index].innerHTML = tempColHintColInDocument.innerHTML;
+    });
+
+    // enter numbers into each box
+    colHints.forEach((col, i) => {
+
+        for (j = 1; j <= col.length; j++) {
+            colHintColsInDocument[i].children[colHintAmount - j].textContent = col[col.length - j];
+        }
+
+    });
 }
 
 function getLargestSubarrayLength(array) {
