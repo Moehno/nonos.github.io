@@ -16,8 +16,8 @@ creationForm.addEventListener('submit', (event) => {
 });
 
 function createBoard(selectedRows, selectedCols) {
-    const innerGameWrapper = document.getElementById("innerGameWrapper");
-    const tempInnerGameWrapper = document.createElement("div");
+    const gameBoxContainer = document.getElementById("gameBoxContainer");
+    const tempgameBoxContainer = document.createElement("div");
     const rowHintsInDocument = document.getElementById("gameRowHints");
     const tempRowHintsInDocument = document.createElement("div");
     const colHintsInDocument = document.getElementById("gameColHints");
@@ -38,7 +38,7 @@ function createBoard(selectedRows, selectedCols) {
             newRow.appendChild(newBox);
         }
 
-        tempInnerGameWrapper.appendChild(newRow);
+        tempgameBoxContainer.appendChild(newRow);
     }
 
     for (let i = 0; i < selectedRows; i++) {
@@ -53,12 +53,12 @@ function createBoard(selectedRows, selectedCols) {
         tempColHintsInDocument.appendChild(newColHintCol);
     }
 
-    innerGameWrapper.innerHTML = tempInnerGameWrapper.innerHTML;
+    gameBoxContainer.innerHTML = tempgameBoxContainer.innerHTML;
     rowHintsInDocument.innerHTML = tempRowHintsInDocument.innerHTML;
     colHintsInDocument.innerHTML = tempColHintsInDocument.innerHTML;
 
     // assign DOM board to a variable as a 2D array
-    boardInDocument = Array.from(document.getElementById("innerGameWrapper").querySelectorAll(".gameRow"));
+    boardInDocument = Array.from(document.getElementById("gameBoxContainer").querySelectorAll(".gameRow"));
     boardInDocument = boardInDocument.map(gameRow =>
         Array.from(gameRow.querySelectorAll(".gameBox"))
     );
@@ -83,7 +83,7 @@ function createBoard(selectedRows, selectedCols) {
     }
 }
 
-document.getElementById("outerGameWrapper").addEventListener("click", (element) => {
+document.getElementById("gameBoxContainer").addEventListener("click", (element) => {
     const targetBox = element.target.closest(".gameBox");
     const targetRow = targetBox.dataset.row;
     const targetCol = targetBox.dataset.col;
@@ -126,7 +126,7 @@ function getHint(row, col) {
                 currentRowHints.push(currentHint);
             }
         } else {
-            // console.log("Error at rowHint creation");
+            console.log("Error at rowHint creation");
         }
     }
 
@@ -148,7 +148,7 @@ function getHint(row, col) {
                 currentColHints.push(currentHint);
             }
         } else {
-            // console.log("Error at colHint creation");
+            console.log("Error at colHint creation");
         }
     }
 
@@ -169,7 +169,7 @@ function renderHint(row, col) {
     rowHints.forEach((element, index) => {
         const tempRowHintRowInDocument = document.createElement("div");
 
-        for (i = 0; i < rowHintAmount; i++) {
+        for (let i = 0; i < rowHintAmount; i++) {
             const newHintBox = document.createElement("div");
             newHintBox.classList.add("gameRowHintBox");
             tempRowHintRowInDocument.appendChild(newHintBox);
@@ -181,7 +181,7 @@ function renderHint(row, col) {
     // enter numbers into each box
     rowHints.forEach((row, i) => {
 
-        for (j = 1; j <= row.length; j++) {
+        for (let j = 1; j <= row.length; j++) {
             rowHintRowsInDocument[i].children[rowHintAmount - j].textContent = row[row.length - j];
         }
     });
@@ -191,7 +191,7 @@ function renderHint(row, col) {
     colHints.forEach((element, index) => {
         const tempColHintColInDocument = document.createElement("div");
 
-        for (i = 0; i < colHintAmount; i++) {
+        for (let i = 0; i < colHintAmount; i++) {
             const newHintBox = document.createElement("div");
             newHintBox.classList.add("gameColHintBox");
             tempColHintColInDocument.appendChild(newHintBox);
@@ -203,7 +203,7 @@ function renderHint(row, col) {
     // enter numbers into each box
     colHints.forEach((col, i) => {
 
-        for (j = 1; j <= col.length; j++) {
+        for (let j = 1; j <= col.length; j++) {
             colHintColsInDocument[i].children[colHintAmount - j].textContent = col[col.length - j];
         }
 
