@@ -1,4 +1,3 @@
-const creationForm = document.getElementById("creationForm");
 let maxRows = 0;
 let maxCols = 0;
 let boardInDocument = [];
@@ -6,82 +5,16 @@ let board = [];
 let rowHints = [];
 let colHints = [];
 
-creationForm.addEventListener('submit', (event) => {
+document.getElementById("creationForm").addEventListener('submit', (event) => {
     event.preventDefault();
 
-    const rowSelector = creationForm.querySelector("#rowSelector");
-    const colSelector = creationForm.querySelector("#colSelector");
+    const rowValue = creationForm.querySelector("#rowSelector").value;
+    const colValue = creationForm.querySelector("#colSelector").value;
 
-    createBoard(rowSelector.value, colSelector.value);
+    createBoard(rowValue, colValue);
+    renderBoard(rowValue, colValue);
+    renderHints();
 });
-
-function createBoard(selectedRows, selectedCols) {
-    const gameBoxContainer = document.getElementById("gameBoxContainer");
-    const tempgameBoxContainer = document.createElement("div");
-    const rowHintsInDocument = document.getElementById("gameRowHints");
-    const tempRowHintsInDocument = document.createElement("div");
-    const colHintsInDocument = document.getElementById("gameColHints");
-    const tempColHintsInDocument = document.createElement("div");
-    maxRows = selectedRows;
-    maxCols = selectedCols;
-
-    // create the DOM elements for the board and insert board into DOM
-    for (let i = 0; i < selectedRows; i++) {
-        const newRow = document.createElement("div");
-        newRow.classList.add("gameRow");
-
-        for (let j = 0; j < selectedCols; j++) {
-            const newBox = document.createElement("div");
-            newBox.classList.add("gameBox");
-            newBox.dataset.row = i;
-            newBox.dataset.col = j;
-            newRow.appendChild(newBox);
-        }
-
-        tempgameBoxContainer.appendChild(newRow);
-    }
-
-    for (let i = 0; i < selectedRows; i++) {
-        const newRowHintRow = document.createElement("div");
-        newRowHintRow.classList.add("gameRowHintRow");
-        tempRowHintsInDocument.appendChild(newRowHintRow);
-    }
-
-    for (let i = 0; i < selectedCols; i++) {
-        const newColHintCol = document.createElement("div");
-        newColHintCol.classList.add("gameColHintCol");
-        tempColHintsInDocument.appendChild(newColHintCol);
-    }
-
-    gameBoxContainer.innerHTML = tempgameBoxContainer.innerHTML;
-    rowHintsInDocument.innerHTML = tempRowHintsInDocument.innerHTML;
-    colHintsInDocument.innerHTML = tempColHintsInDocument.innerHTML;
-
-    // assign DOM board to a variable as a 2D array
-    boardInDocument = Array.from(document.getElementById("gameBoxContainer").querySelectorAll(".gameRow"));
-    boardInDocument = boardInDocument.map(gameRow =>
-        Array.from(gameRow.querySelectorAll(".gameBox"))
-    );
-
-    // create intern arrays for faster calculations
-    // create intern board
-    for (let i = 0; i < selectedRows; i++) {
-        board[i] = [];
-        for (let j = 0; j < selectedCols; j++) {
-            board[i][j] = 0;
-        }
-    }
-
-    // create intern rowHints
-    for (let i = 0; i < selectedRows; i++) {
-        rowHints[i] = [];
-    }
-
-    // create intern colHints
-    for (let i = 0; i < selectedCols; i++) {
-        colHints[i] = [];
-    }
-}
 
 document.getElementById("gameBoxContainer").addEventListener("click", (element) => {
     const targetBox = element.target.closest(".gameBox");
@@ -103,6 +36,27 @@ document.getElementById("gameBoxContainer").addEventListener("click", (element) 
         // console.log("Error");
     }
 });
+
+function createBoard(selectedRows, selectedCols) {
+    // create intern arrays for faster calculations
+    // create intern board
+    for (let i = 0; i < selectedRows; i++) {
+        board[i] = [];
+        for (let j = 0; j < selectedCols; j++) {
+            board[i][j] = 0;
+        }
+    }
+
+    // create intern rowHints
+    for (let i = 0; i < selectedRows; i++) {
+        rowHints[i] = [];
+    }
+
+    // create intern colHints
+    for (let i = 0; i < selectedCols; i++) {
+        colHints[i] = [];
+    }
+}
 
 function getHint(row, col) {
     const currentRowHints = [];
@@ -155,28 +109,79 @@ function getHint(row, col) {
     rowHints[row] = currentRowHints;
     colHints[col] = currentColHints;
 
-    renderHint(row, col)
+    renderHints();
 }
 
-function renderHint(row, col) {
+function renderBoard(selectedRows, selectedCols) {
+    const gameBoxContainer = document.getElementById("gameBoxContainer");
+    const tempGameBoxContainer = document.createDocumentFragment();
+    const rowHintsInDocument = document.getElementById("gameRowHints");
+    const tempRowHintsInDocument = document.createDocumentFragment();
+    const colHintsInDocument = document.getElementById("gameColHints");
+    const tempColHintsInDocument = document.createDocumentFragment();
+    maxRows = selectedRows;
+    maxCols = selectedCols;
+
+    // create the DOM elements for the board and insert board into DOM
+    for (let i = 0; i < selectedRows; i++) {
+        const newRow = document.createElement("div");
+        newRow.classList.add("gameRow");
+
+        for (let j = 0; j < selectedCols; j++) {
+            const newBox = document.createElement("div");
+            newBox.classList.add("gameBox");
+            newBox.dataset.row = i;
+            newBox.dataset.col = j;
+            newRow.appendChild(newBox);
+        }
+
+        tempGameBoxContainer.appendChild(newRow);
+    }
+
+    for (let i = 0; i < selectedRows; i++) {
+        const newRowHintRow = document.createElement("div");
+        newRowHintRow.classList.add("gameRowHintRow");
+        tempRowHintsInDocument.appendChild(newRowHintRow);
+    }
+
+    for (let i = 0; i < selectedCols; i++) {
+        const newColHintCol = document.createElement("div");
+        newColHintCol.classList.add("gameColHintCol");
+        tempColHintsInDocument.appendChild(newColHintCol);
+    }
+
+    gameBoxContainer.replaceChildren(tempGameBoxContainer);
+    rowHintsInDocument.replaceChildren(tempRowHintsInDocument);
+    colHintsInDocument.replaceChildren(tempColHintsInDocument);
+
+    // assign DOM board to a variable as a 2D array
+    boardInDocument = Array.from(document.getElementById("gameBoxContainer").querySelectorAll(".gameRow"));
+    boardInDocument = boardInDocument.map(gameRow =>
+        Array.from(gameRow.querySelectorAll(".gameBox"))
+    );
+}
+
+function renderHints() {
     const rowHintRowsInDocument = Array.from(document.getElementById("gameRowHints").querySelectorAll(".gameRowHintRow"));
     const colHintColsInDocument = Array.from(document.getElementById("gameColHints").querySelectorAll(".gameColHintCol"));
     const rowHintAmount = getLargestSubarrayLength(rowHints);
     const colHintAmount = getLargestSubarrayLength(colHints);
 
-    // render row hint
-    // render empty boxes
-    rowHints.forEach((element, index) => {
-        const tempRowHintRowInDocument = document.createElement("div");
+    for (let i = 0; i < rowHints.length; i++) {
+        const tempRowHintRowInDocument = document.createDocumentFragment();
+        let boxCounter = 0;
 
-        for (let i = 0; i < rowHintAmount; i++) {
+        do {
+            console.log("test");
             const newHintBox = document.createElement("div");
             newHintBox.classList.add("gameRowHintBox");
             tempRowHintRowInDocument.appendChild(newHintBox);
-        }
+            boxCounter++;
+        } while (boxCounter < rowHintAmount);
 
-        rowHintRowsInDocument[index].innerHTML = tempRowHintRowInDocument.innerHTML;
-    });
+        rowHintRowsInDocument[i].replaceChildren(tempRowHintRowInDocument);
+
+    }
 
     // enter numbers into each box
     rowHints.forEach((row, i) => {
@@ -188,17 +193,21 @@ function renderHint(row, col) {
 
     // render col hint
     // render empty boxes
-    colHints.forEach((element, index) => {
-        const tempColHintColInDocument = document.createElement("div");
+    for (let i = 0; i < colHints.length; i++) {
+        const tempColHintColInDocument = document.createDocumentFragment();
+        let boxCounter = 0;
 
-        for (let i = 0; i < colHintAmount; i++) {
+        do {
+            console.log("test");
             const newHintBox = document.createElement("div");
             newHintBox.classList.add("gameColHintBox");
             tempColHintColInDocument.appendChild(newHintBox);
-        }
+            boxCounter++;
+        } while (boxCounter < colHintAmount);
 
-        colHintColsInDocument[index].innerHTML = tempColHintColInDocument.innerHTML;
-    });
+        colHintColsInDocument[i].replaceChildren(tempColHintColInDocument);
+
+    }
 
     // enter numbers into each box
     colHints.forEach((col, i) => {
@@ -213,11 +222,11 @@ function renderHint(row, col) {
 function getLargestSubarrayLength(array) {
     maxLength = 0;
 
-    array.forEach(element => {
-        if (element.length > maxLength) {
-            maxLength = element.length;
+    for (let i = 0; i < array.length; i++) {
+        if (array[i].length > maxLength) {
+            maxLength = array[i].length;
         }
-    });
+    }
 
     return maxLength;
 }
