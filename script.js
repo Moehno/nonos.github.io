@@ -172,7 +172,6 @@ function renderHints() {
         let boxCounter = 0;
 
         do {
-            console.log("test");
             const newHintBox = document.createElement("div");
             newHintBox.classList.add("gameRowHintBox");
             tempRowHintRowInDocument.appendChild(newHintBox);
@@ -184,12 +183,12 @@ function renderHints() {
     }
 
     // enter numbers into each box
-    rowHints.forEach((row, i) => {
+    for (let i = 0; i < rowHints.length; i++) {
 
-        for (let j = 1; j <= row.length; j++) {
-            rowHintRowsInDocument[i].children[rowHintAmount - j].textContent = row[row.length - j];
+        for (let j = 1; j <= rowHints[i].length; j++) {
+            rowHintRowsInDocument[i].children[rowHintAmount - j].textContent = rowHints[i][rowHints[i].length - j];
         }
-    });
+    }
 
     // render col hint
     // render empty boxes
@@ -198,7 +197,6 @@ function renderHints() {
         let boxCounter = 0;
 
         do {
-            console.log("test");
             const newHintBox = document.createElement("div");
             newHintBox.classList.add("gameColHintBox");
             tempColHintColInDocument.appendChild(newHintBox);
@@ -210,13 +208,13 @@ function renderHints() {
     }
 
     // enter numbers into each box
-    colHints.forEach((col, i) => {
 
-        for (let j = 1; j <= col.length; j++) {
-            colHintColsInDocument[i].children[colHintAmount - j].textContent = col[col.length - j];
+    for (let i = 0; i < colHints.length; i++) {
+
+        for (let j = 1; j <= colHints[i].length; j++) {
+            colHintColsInDocument[i].children[colHintAmount - j].textContent = colHints[i][colHints[i].length - j];
         }
-
-    });
+    }
 }
 
 function getLargestSubarrayLength(array) {
