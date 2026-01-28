@@ -188,10 +188,7 @@ function renderHints() {
             boxCounter++;
         } while (boxCounter < rowHintAmount);
 
-        console.log(rowHintRowsInDocument[i]);
-
         rowHintRowsInDocument[i].replaceChildren(tempRowHintRowInDocument);
-
     }
 
     // enter numbers into each box
@@ -239,3 +236,4 @@ function getLargestSubarrayLength(array) {
 
     return maxLength;
 }
+
