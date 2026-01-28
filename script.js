@@ -16,8 +16,13 @@ document.getElementById("creationForm").addEventListener('submit', (event) => {
     renderHints();
 });
 
-document.getElementById("gameBoxContainer").addEventListener("click", (element) => {
+document.getElementById("gameBoxContainer").addEventListener("pointerup", (element) => {
     const targetBox = element.target.closest(".gameBox");
+
+    if (!targetBox) {
+        return;
+    }
+
     const targetRow = targetBox.dataset.row;
     const targetCol = targetBox.dataset.col;
     const targetValue = board[targetRow][targetCol];
@@ -40,6 +45,7 @@ document.getElementById("gameBoxContainer").addEventListener("click", (element) 
 function createBoard(selectedRows, selectedCols) {
     // create intern arrays for faster calculations
     // create intern board
+    board = [];
     for (let i = 0; i < selectedRows; i++) {
         board[i] = [];
         for (let j = 0; j < selectedCols; j++) {
@@ -48,17 +54,20 @@ function createBoard(selectedRows, selectedCols) {
     }
 
     // create intern rowHints
+    rowHints = [];
     for (let i = 0; i < selectedRows; i++) {
         rowHints[i] = [];
     }
 
     // create intern colHints
+    colHints = [];
     for (let i = 0; i < selectedCols; i++) {
         colHints[i] = [];
     }
 }
 
 function getHint(row, col) {
+    // this function searches all hints of the given row and column and outputs them into an global array
     const currentRowHints = [];
     const currentColHints = [];
 
@@ -167,6 +176,7 @@ function renderHints() {
     const rowHintAmount = getLargestSubarrayLength(rowHints);
     const colHintAmount = getLargestSubarrayLength(colHints);
 
+    // render row hints
     for (let i = 0; i < rowHints.length; i++) {
         const tempRowHintRowInDocument = document.createDocumentFragment();
         let boxCounter = 0;
@@ -177,6 +187,8 @@ function renderHints() {
             tempRowHintRowInDocument.appendChild(newHintBox);
             boxCounter++;
         } while (boxCounter < rowHintAmount);
+
+        console.log(rowHintRowsInDocument[i]);
 
         rowHintRowsInDocument[i].replaceChildren(tempRowHintRowInDocument);
 
@@ -208,7 +220,6 @@ function renderHints() {
     }
 
     // enter numbers into each box
-
     for (let i = 0; i < colHints.length; i++) {
 
         for (let j = 1; j <= colHints[i].length; j++) {
@@ -227,8 +238,4 @@ function getLargestSubarrayLength(array) {
     }
 
     return maxLength;
-}
-
-function checkAllHints() {
-
 }
