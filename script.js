@@ -1,9 +1,8 @@
-let maxRows = 0;
-let maxCols = 0;
+let previewInDocument = [];
 let boardInDocument = [];
-let board = [];
 let rowHints = [];
 let colHints = [];
+let board = [];
 
 document.getElementById("creationForm").addEventListener('submit', (event) => {
     event.preventDefault();
@@ -12,12 +11,12 @@ document.getElementById("creationForm").addEventListener('submit', (event) => {
     const colValue = creationForm.querySelector("#colSelector").value;
 
     createBoard(rowValue, colValue);
-    renderBoard(rowValue, colValue);
-    renderHints();
+    renderGame(rowValue, colValue);
+    // renderHints();
 });
 
-document.getElementById("gameBoxContainer").addEventListener("pointerup", (element) => {
-    const targetBox = element.target.closest(".gameBox");
+document.getElementById("playfield").addEventListener("pointerup", (element) => {
+    const targetBox = element.target.closest(".playfieldBox");
 
     if (!targetBox) {
         return;
@@ -31,11 +30,13 @@ document.getElementById("gameBoxContainer").addEventListener("pointerup", (eleme
         // console.log("Empty space found");
         board[targetRow][targetCol] = 1;
         boardInDocument[targetRow][targetCol].classList.add("checked");
+        previewInDocument[targetRow][targetCol].classList.add("checked");
         getHint(targetRow, targetCol);
     } else if (targetValue === 1) {
         // console.log("Filled Space found");
         board[targetRow][targetCol] = 0;
         boardInDocument[targetRow][targetCol].classList.remove("checked");
+        previewInDocument[targetRow][targetCol].classList.remove("checked");
         getHint(targetRow, targetCol);
     } else {
         // console.log("Error");
@@ -73,7 +74,7 @@ function getHint(row, col) {
 
     // get row hint
     let currentHint = 0;
-    for (let i = 0; i < maxCols; i++) {
+    for (let i = 0; i < board[row].length; i++) {
         const currentValue = board[row][i];
 
         if (currentValue === 0) {
@@ -85,7 +86,7 @@ function getHint(row, col) {
         } else if (currentValue === 1) {
             currentHint++;
 
-            if ((i + 1) >= maxCols) {
+            if ((i + 1) >= board[row].length) {
                 currentRowHints.push(currentHint);
             }
         } else {
@@ -95,7 +96,7 @@ function getHint(row, col) {
 
     // get col hint
     currentHint = 0;
-    for (let j = 0; j < maxRows; j++) {
+    for (let j = 0; j < board.length; j++) {
         const currentValue = board[j][col];
 
         if (currentValue === 0) {
@@ -107,7 +108,7 @@ function getHint(row, col) {
         } else if (currentValue === 1) {
             currentHint++;
 
-            if ((j + 1) >= maxRows) {
+            if ((j + 1) >= board.length) {
                 currentColHints.push(currentHint);
             }
         } else {
@@ -118,111 +119,8 @@ function getHint(row, col) {
     rowHints[row] = currentRowHints;
     colHints[col] = currentColHints;
 
-    renderHints();
-}
-
-function renderBoard(selectedRows, selectedCols) {
-    const gameBoxContainer = document.getElementById("gameBoxContainer");
-    const tempGameBoxContainer = document.createDocumentFragment();
-    const rowHintsInDocument = document.getElementById("gameRowHints");
-    const tempRowHintsInDocument = document.createDocumentFragment();
-    const colHintsInDocument = document.getElementById("gameColHints");
-    const tempColHintsInDocument = document.createDocumentFragment();
-    maxRows = selectedRows;
-    maxCols = selectedCols;
-
-    // create the DOM elements for the board and insert board into DOM
-    for (let i = 0; i < selectedRows; i++) {
-        const newRow = document.createElement("div");
-        newRow.classList.add("gameRow");
-
-        for (let j = 0; j < selectedCols; j++) {
-            const newBox = document.createElement("div");
-            newBox.classList.add("gameBox");
-            newBox.dataset.row = i;
-            newBox.dataset.col = j;
-            newRow.appendChild(newBox);
-        }
-
-        tempGameBoxContainer.appendChild(newRow);
-    }
-
-    for (let i = 0; i < selectedRows; i++) {
-        const newRowHintRow = document.createElement("div");
-        newRowHintRow.classList.add("gameRowHintRow");
-        tempRowHintsInDocument.appendChild(newRowHintRow);
-    }
-
-    for (let i = 0; i < selectedCols; i++) {
-        const newColHintCol = document.createElement("div");
-        newColHintCol.classList.add("gameColHintCol");
-        tempColHintsInDocument.appendChild(newColHintCol);
-    }
-
-    gameBoxContainer.replaceChildren(tempGameBoxContainer);
-    rowHintsInDocument.replaceChildren(tempRowHintsInDocument);
-    colHintsInDocument.replaceChildren(tempColHintsInDocument);
-
-    // assign DOM board to a variable as a 2D array
-    boardInDocument = Array.from(document.getElementById("gameBoxContainer").querySelectorAll(".gameRow"));
-    boardInDocument = boardInDocument.map(gameRow =>
-        Array.from(gameRow.querySelectorAll(".gameBox"))
-    );
-}
-
-function renderHints() {
-    const rowHintRowsInDocument = Array.from(document.getElementById("gameRowHints").querySelectorAll(".gameRowHintRow"));
-    const colHintColsInDocument = Array.from(document.getElementById("gameColHints").querySelectorAll(".gameColHintCol"));
-    const rowHintAmount = getLargestSubarrayLength(rowHints);
-    const colHintAmount = getLargestSubarrayLength(colHints);
-
-    // render row hints
-    for (let i = 0; i < rowHints.length; i++) {
-        const tempRowHintRowInDocument = document.createDocumentFragment();
-        let boxCounter = 0;
-
-        do {
-            const newHintBox = document.createElement("div");
-            newHintBox.classList.add("gameRowHintBox");
-            tempRowHintRowInDocument.appendChild(newHintBox);
-            boxCounter++;
-        } while (boxCounter < rowHintAmount);
-
-        rowHintRowsInDocument[i].replaceChildren(tempRowHintRowInDocument);
-    }
-
-    // enter numbers into each box
-    for (let i = 0; i < rowHints.length; i++) {
-
-        for (let j = 1; j <= rowHints[i].length; j++) {
-            rowHintRowsInDocument[i].children[rowHintAmount - j].textContent = rowHints[i][rowHints[i].length - j];
-        }
-    }
-
-    // render col hint
-    // render empty boxes
-    for (let i = 0; i < colHints.length; i++) {
-        const tempColHintColInDocument = document.createDocumentFragment();
-        let boxCounter = 0;
-
-        do {
-            const newHintBox = document.createElement("div");
-            newHintBox.classList.add("gameColHintBox");
-            tempColHintColInDocument.appendChild(newHintBox);
-            boxCounter++;
-        } while (boxCounter < colHintAmount);
-
-        colHintColsInDocument[i].replaceChildren(tempColHintColInDocument);
-
-    }
-
-    // enter numbers into each box
-    for (let i = 0; i < colHints.length; i++) {
-
-        for (let j = 1; j <= colHints[i].length; j++) {
-            colHintColsInDocument[i].children[colHintAmount - j].textContent = colHints[i][colHints[i].length - j];
-        }
-    }
+    renderColHints(colHints.length);
+    renderRowHints(rowHints.length);
 }
 
 function getLargestSubarrayLength(array) {
@@ -237,3 +135,118 @@ function getLargestSubarrayLength(array) {
     return maxLength;
 }
 
+function renderGame(selectedRows, selectedCols) {
+    renderPreview(selectedRows, selectedCols);
+    renderColHints(selectedCols);
+    renderRowHints(selectedRows);
+    renderPlayfield(selectedRows, selectedCols);
+}
+
+function renderPreview(selectedRows, selectedCols) {
+    const preview = document.getElementById("preview");
+    const tempPreview = document.createDocumentFragment();
+
+    for (let i = 0; i < selectedRows; i++) {
+        const newRow = document.createElement("div");
+        newRow.classList.add("previewRow");
+
+        for (let j = 0; j < selectedCols; j++) {
+            const newBox = document.createElement("div");
+            newBox.classList.add("previewBox");
+            newRow.appendChild(newBox);
+        }
+
+        tempPreview.appendChild(newRow);
+    }
+
+    preview.replaceChildren(tempPreview);
+
+    previewInDocument = Array.from(document.getElementById("preview").querySelectorAll(".previewRow"));
+    previewInDocument = previewInDocument.map(previewRow =>
+        Array.from(previewRow.querySelectorAll(".previewBox"))
+    );
+}
+
+function renderColHints(selectedCols) {
+    const colHintsInDocument = document.getElementById("colHints");
+    const tempColHintsInDocument = document.createDocumentFragment();
+    const colHintAmount = getLargestSubarrayLength(colHints);
+
+    for (let i = 0; i < selectedCols; i++) {
+        const newColHintCol = document.createElement("div");
+        newColHintCol.classList.add("colHintCol");
+        tempColHintsInDocument.appendChild(newColHintCol);
+
+        let boxCounter = 0;
+
+        do {
+            const newHintBox = document.createElement("div");
+            newHintBox.classList.add("colHintBox");
+            newColHintCol.appendChild(newHintBox);
+            boxCounter++;
+        } while (boxCounter < colHintAmount);
+
+        // enter numbers into each box
+        for (let j = 1; j <= colHints[i].length; j++) {
+            newColHintCol.children[colHintAmount - j].textContent = colHints[i][colHints[i].length - j];
+        }
+    }
+
+    colHintsInDocument.replaceChildren(tempColHintsInDocument);
+}
+
+function renderRowHints(selectedRows) {
+    const rowHintsInDocument = document.getElementById("rowHints");
+    const tempRowHintsInDocument = document.createDocumentFragment();
+    const rowHintAmount = getLargestSubarrayLength(rowHints);
+
+    for (let i = 0; i < selectedRows; i++) {
+        const newRowHintRow = document.createElement("div");
+        newRowHintRow.classList.add("rowHintRow");
+        tempRowHintsInDocument.appendChild(newRowHintRow);
+
+        let boxCounter = 0;
+
+        do {
+            const newHintBox = document.createElement("div");
+            newHintBox.classList.add("rowHintBox");
+            newRowHintRow.appendChild(newHintBox);
+            boxCounter++;
+        } while (boxCounter < rowHintAmount);
+
+        // enter numbers into each box
+        for (let j = 1; j <= rowHints[i].length; j++) {
+            newRowHintRow.children[rowHintAmount - j].textContent = rowHints[i][rowHints[i].length - j];
+        }
+    }
+
+    rowHintsInDocument.replaceChildren(tempRowHintsInDocument);
+}
+
+function renderPlayfield(selectedRows, selectedCols) {
+    const playfield = document.getElementById("playfield");
+    const tempPlayfield = document.createDocumentFragment();
+
+    for (let i = 0; i < selectedRows; i++) {
+        const newRow = document.createElement("div");
+        newRow.classList.add("playfieldRow");
+
+        for (let j = 0; j < selectedCols; j++) {
+            const newBox = document.createElement("div");
+            newBox.classList.add("playfieldBox");
+            newBox.dataset.row = i;
+            newBox.dataset.col = j;
+            newRow.appendChild(newBox);
+        }
+
+        tempPlayfield.appendChild(newRow);
+    }
+
+    playfield.replaceChildren(tempPlayfield);
+
+    // assign DOM board to a variable as a 2D array
+    boardInDocument = Array.from(document.getElementById("playfield").querySelectorAll(".playfieldRow"));
+    boardInDocument = boardInDocument.map(playfieldRow =>
+        Array.from(playfieldRow.querySelectorAll(".playfieldBox"))
+    );
+}
