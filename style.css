@@ -30,25 +30,41 @@ body {
     pointer-events: all;
 }
 
-.gamePreview {
+.preview {
     background-color: white;
+    /* aspect-ratio: 1 / 1; */
     height: 100%;
     width: 100%;
 }
 
-.gameColHints {
+.previewRow {
+    display: flex;
+}
+
+.previewBox {
+    display: flex;
+    min-width: 5px;
+    min-height: 5px;
+    background-color: white;
+}
+
+.previewBox.checked {
+    background-color: black;
+}
+
+.colHints {
     display: flex;
     flex-direction: row;
     gap: 2px;
 }
 
-.gameColHintCol {
+.colHintCol {
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
 
-.gameColHintBox {
+.colHintBox {
     height: 25px;
     width: 25px;
     padding: 4px;
@@ -58,18 +74,18 @@ body {
     justify-content: center;
 }
 
-.gameRowHints {
+.rowHints {
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
 
-.gameRowHintRow {
+.rowHintRow {
     display: flex;
     gap: 2px;
 }
 
-.gameRowHintBox {
+.rowHintBox {
     display: flex;
     height: 25px;
     width: 25px;
@@ -79,25 +95,25 @@ body {
     justify-content: center;
 }
 
-.gameBoxContainer {
+.playfield {
     gap: 2px;
     display: flex;
     flex-direction: column;
 }
 
-.gameRow {
+.playfieldRow {
     display: flex;
     gap: 2px;
 }
 
-.gameBox {
+.playfieldBox {
     height: 25px;
     width: 25px;
     padding: 4px;
     background-color: white;
 }
 
-.gameBox.checked {
+.playfieldBox.checked {
     background-color: black;
     background-clip: padding-box;
     box-shadow: inset 0px 0px 1px 2px white;
