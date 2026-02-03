@@ -1,3 +1,8 @@
+:root {
+    --cols: 1;
+    --rows: 1;
+}
+
 * {
     box-sizing: border-box;
     text-align: center;
@@ -8,11 +13,20 @@ body {
     font-family: sans-serif;
 }
 
+/* ----------------------------------------
+-------------------------------------------
+-------------------------------------------
+-------------------------------------------
+-----------------------------------------*/
+
+/* ----------- OUTER WRAPPERS -------------*/
+
 .outerGameWrapper {
     position: fixed;
     inset: 0;
     display: grid;
-    place-items: center;
+    justify-content: center;
+    align-items: center;
     background: transparent;
     pointer-events: none;
     user-select: none;
@@ -23,34 +37,66 @@ body {
     display: grid;
     grid-template-columns: auto auto;
     grid-template-rows: auto auto;
-    position: fixed;
     place-items: center;
     background-color: black;
     gap: 3px;
     pointer-events: all;
+    max-width: 80vw;
+    max-height: 80vh;
 }
 
-.preview {
-    background-color: white;
-    /* aspect-ratio: 1 / 1; */
+/* ----------- PREVIEW CONTAINER -------------*/
+
+.previewWrapper {
+    position: relative;
+    background-color: lightgray;
     height: 100%;
     width: 100%;
 }
 
+.preview {
+    position: absolute;
+    background-color: white;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 2px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    max-width: 100%;
+    max-height: 100%;
+    margin: auto;
+}
+
 .previewRow {
     display: flex;
+    justify-content: center;
+    flex: 0 1 auto;
+    min-height: 0;
+    min-width: 0;
+    max-width: 100%;
+    max-height: 100%;
+    width: round(down, 100%, var(--cols) * 1px);
+    aspect-ratio: var(--cols) / 1;
 }
 
 .previewBox {
     display: flex;
-    min-width: 5px;
-    min-height: 5px;
+    aspect-ratio: 1 / 1;
+    flex: 0 0 auto;
+    min-width: 1px;
+    min-height: 1px;
     background-color: white;
 }
 
 .previewBox.checked {
     background-color: black;
 }
+
+/* -----------COLHINT CONTAINER-------------*/
 
 .colHints {
     display: flex;
@@ -74,6 +120,8 @@ body {
     justify-content: center;
 }
 
+/* ----------- ROWHINT CONTAINER -------------*/
+
 .rowHints {
     display: flex;
     flex-direction: column;
@@ -95,6 +143,8 @@ body {
     justify-content: center;
 }
 
+/* ----------- PLAYFIELD CONTAINER -------------*/
+
 .playfield {
     gap: 2px;
     display: flex;
@@ -111,6 +161,8 @@ body {
     width: 25px;
     padding: 4px;
     background-color: white;
+    transition: 0.1s ease;
+    box-shadow: inset 0px 0px 1px 2px white;
 }
 
 .playfieldBox.checked {
@@ -118,4 +170,99 @@ body {
     background-clip: padding-box;
     box-shadow: inset 0px 0px 1px 2px white;
     padding: 4px;
+    transition: 0.1s ease;
+}
+
+/* ----------------------------------------
+-------------------------------------------
+-------------------------------------------
+-------------------------------------------
+-----------------------------------------*/
+
+/* ----------- SIDEBAR -------------*/
+
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 250px;
+    height: 100%;
+    background: #222;
+    color: white;
+    transition: transform 0.3s ease-in-out;
+    font-family: sans-serif;
+    z-index: 1000;
+    transform: translateX(-250px);
+}
+
+.sidebar.open {
+    transform: translateX(0);
+}
+
+#openSidebarButton {
+    position: absolute;
+    right: -40px;
+    top: 20px;
+    width: 40px;
+    height: 40px;
+    background: #222;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0 5px 5px 0;
+}
+
+.sidebarList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebarListItem {
+    padding: 15px 20px;
+    cursor: pointer;
+    border-bottom: 1px solid #333;
+}
+
+.sidebarListItemContent {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease;
+    overflow: hidden;
+}
+
+.sidebarSubmenu.open .sidebarListItemContent {
+    grid-template-rows: 1fr;
+}
+
+.sidebarForm {
+    min-height: 0;
+    background: #333;
+    border-radius: 5px;
+    padding: 0 15px;
+}
+
+.sidebarFormRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.sidebarArrow {
+    display: inline-block;
+    transition: transform 0.3s;
+}
+
+.sidebarSubmenu.open .sidebarArrow {
+    transform: rotate(180deg);
+}
+
+/* ----------- OTHER -------------*/
+
+.hidden {
+    display: none;
 }
