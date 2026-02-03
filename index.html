@@ -18,7 +18,8 @@
 
         <div class="formWrapper">
             <form action="" id="creationForm">
-                <select name="colSelector" id="colSelector">
+                <span>Breite: </span>
+                <select name="creationColSelector" id="creationColSelector">
                     <option value="5">5x</option>
                     <option value="10">10x</option>
                     <option value="15">15x</option>
@@ -26,7 +27,8 @@
                     <option value="25">25x</option>
                     <option value="30">30x</option>
                 </select>
-                <select name="rowSelector" id="rowSelector">
+                <span>Höhe: </span>
+                <select name="creationRowSelector" id="creationRowSelector">
                     <option value="5">5x</option>
                     <option value="10">10x</option>
                     <option value="15">15x</option>
@@ -38,14 +40,68 @@
             </form>
         </div>
 
-        <div class="outerGameWrapper" id="outerGameWrapper">
+        <aside class="sidebar" id="sidebar">
+            <button id="openSidebarButton">
+                ☰
+            </button>
+
+            <div class="sidebarTitle">
+                <h3>Mein Projekt</h3>
+            </div>
+
+            <ul class="sidebarList">
+                <li class="sidebarListItem sidebarSubmenu" onclick="this.classList.toggle('open')">
+                    <div class="sidebarListItemTitle">
+                        Größe ändern <span class="sidebarArrow">▼</span>
+                    </div>
+                    <div class="sidebarListItemContent">
+                            <form action="" class="sidebarForm" id="changeSizeForm" onclick="event.stopPropagation()">
+                            <div class="sidebarFormRow">
+                                <span>Breite</span>
+                                <select name="changeSizeColSelector" id="changeSizeColSelector" required>
+                                    <option value="" selected>-- Bitte wählen --</option>
+                                    <option value="5">5x</option>
+                                    <option value="10">10x</option>
+                                    <option value="15">15x</option>
+                                    <option value="20">20x</option>
+                                    <option value="25">25x</option>
+                                    <option value="30">30x</option>
+                                </select>
+                            </div>
+                            <div class="sidebarFormRow">
+                                <span>Höhe</span>
+                                <select name="changeSizeRowSelector" id="changeSizeRowSelector" required>
+                                    <option value="" selected>-- Bitte wählen --</option>
+                                    <option value="5">5x</option>
+                                    <option value="10">10x</option>
+                                    <option value="15">15x</option>
+                                    <option value="20">20x</option>
+                                    <option value="25">25x</option>
+                                    <option value="30">30x</option>
+                                </select>
+                            </div>
+                            <input type="submit" value="Anwenden">
+                        </form>
+                    </div>
+                </li>
+                <li class="sidebarListItem">Neues Item...</li>
+            </ul>
+        </aside>
+
+
+        <div class="outerGameWrapper hidden" id="outerGameWrapper">
             <div class="innerGameWrapper" id="innerGameWrapper">
-                <div class="preview" id="preview"></div>
+                <div class="previewWrapper">
+                    <div class="preview" id="preview"></div>
+                </div>
                 <div class="colHints" id="colHints"></div>
                 <div class="rowHints" id="rowHints"></div>
                 <div class="playfield" id="playfield"></div>
             </div>
         </div>
+
+        <button onclick="logData()">Data</button>
+        <button onclick="getAllHints()">Hints</button>
 
     </main>
 
