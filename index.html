@@ -55,7 +55,7 @@
                         Größe ändern <span class="sidebarArrow">▼</span>
                     </div>
                     <div class="sidebarListItemContent">
-                            <form action="" class="sidebarForm" id="changeSizeForm" onclick="event.stopPropagation()">
+                        <form action="" class="sidebarForm" id="changeSizeForm" onclick="event.stopPropagation()">
                             <div class="sidebarFormRow">
                                 <span>Breite</span>
                                 <select name="changeSizeColSelector" id="changeSizeColSelector" required>
@@ -84,10 +84,17 @@
                         </form>
                     </div>
                 </li>
-                <li class="sidebarListItem">Neues Item...</li>
+                <li class="sidebarListItem sidebarSubmenu" onclick="this.classList.toggle('open')">
+                    <div class="sidebarListItemTitle">
+                        Speichern / Laden <span class="sidebarArrow">▼</span>
+                    </div>
+                    <div class="sidebarListItemContent">
+                        <button>Speichern</button>
+                        <button>Laden</button>
+                    </div>
+                </li>
             </ul>
         </aside>
-
 
         <div class="outerGameWrapper hidden" id="outerGameWrapper">
             <div class="innerGameWrapper" id="innerGameWrapper">
