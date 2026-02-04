@@ -23,6 +23,7 @@ let board = [];
 ------------- EVENT LISTENERS -------------
 -----------------------------------------*/
 
+// function to open submenus in the sidebar
 openSidebarButton.addEventListener("click", () => {
     sidebar.classList.toggle("open");
 
@@ -33,6 +34,7 @@ openSidebarButton.addEventListener("click", () => {
     }
 });
 
+// create the initial board with all empty spaces
 const creationForm = document.getElementById("creationForm");
 
 creationForm.addEventListener("submit", (event) => {
@@ -43,10 +45,12 @@ creationForm.addEventListener("submit", (event) => {
 
     createBoard(rowValue, colValue);
     renderGame(rowValue, colValue);
+    
     document.getElementById("outerGameWrapper").classList.remove("hidden");
     document.getElementById("creationForm").classList.add("hidden");
 });
 
+// change size of the board, will preserve playerinputs 
 const changeSizeForm = document.getElementById("changeSizeForm");
 
 changeSizeForm.addEventListener("submit", (event) => {
@@ -67,31 +71,29 @@ changeSizeForm.addEventListener("submit", (event) => {
     }
 });
 
+// register playerinput in playfield area to check or uncheck spaces
 document.getElementById("playfield").addEventListener("pointerup", (element) => {
     const targetBox = element.target.closest(".playfieldBox");
 
-    if (!targetBox) {
-        return;
-    }
+    // cancel function if input is not a valid box
+    if (!targetBox) return;
 
     const targetRow = targetBox.dataset.row;
     const targetCol = targetBox.dataset.col;
     const targetValue = board[targetRow][targetCol];
 
     if (targetValue === 0) {
-        // console.log("Empty space found");
         board[targetRow][targetCol] = 1;
         boardInDocument[targetRow][targetCol].classList.add("checked");
         previewInDocument[targetRow][targetCol].classList.add("checked");
         getHint(targetRow, targetCol);
     } else if (targetValue === 1) {
-        // console.log("Filled Space found");
         board[targetRow][targetCol] = 0;
         boardInDocument[targetRow][targetCol].classList.remove("checked");
         previewInDocument[targetRow][targetCol].classList.remove("checked");
         getHint(targetRow, targetCol);
     } else {
-        // console.log("Error");
+        console.log("Invalid space value");
     }
 });
 
@@ -100,9 +102,9 @@ document.getElementById("playfield").addEventListener("pointerup", (element) => 
 --------- INTERNAL BOARD & HINTS ----------
 -----------------------------------------*/
 
+// create internal arrays for faster calculations
 function createBoard(selectedRows, selectedCols) {
-    // create intern arrays for faster calculations
-    // create intern board
+    // create internal board
     board = [];
     for (let i = 0; i < selectedRows; i++) {
         board[i] = [];
@@ -111,21 +113,21 @@ function createBoard(selectedRows, selectedCols) {
         }
     }
 
-    // create intern colHints
+    // create internal colHints
     colHints = [];
     for (let i = 0; i < selectedCols; i++) {
         colHints[i] = [];
     }
 
-    // create intern rowHints
+    // create internal rowHints
     rowHints = [];
     for (let i = 0; i < selectedRows; i++) {
         rowHints[i] = [];
     }
 }
 
+// get the hints of only the target row and col, then update colHints and rowHints
 function getHint(selectedRow, selectedCol) {
-    // this function searches all hints of the given row and column and outputs them into an global array
     const currentRowHints = [];
     const currentColHints = [];
 
@@ -173,9 +175,11 @@ function getHint(selectedRow, selectedCol) {
         }
     }
 
+    // output into global arrays
     rowHints[selectedRow] = currentRowHints;
     colHints[selectedCol] = currentColHints;
 
+    // set dirty flags
     dirtyFlags.styles = true;
     dirtyFlags.rowHints = true;
     dirtyFlags.colHints = true;
@@ -183,6 +187,7 @@ function getHint(selectedRow, selectedCol) {
     renderGame(rowHints.length, colHints.length);
 }
 
+// function the gather all hints in the board, used when changing board size
 function getAllHints() {
     // get all row hints
     for (let i = 0; i < board.length; i++) {
@@ -207,6 +212,7 @@ function getAllHints() {
                 console.log("Error at rowHint creation");
             }
         }
+
         rowHints[i] = currentRowHints;
     }
 
@@ -234,16 +240,16 @@ function getAllHints() {
                 console.log("Error at colHint creation");
             }
         }
+
         colHints[i] = currentColHints;
     }
-
-    console.log("rowhints",rowHints,"colhints", colHints)
 }
 
 /* ----------------------------------------
 --------------- RENDERING -----------------
 -----------------------------------------*/
 
+// render all elements with dirty flags
 function renderGame(selectedRows, selectedCols) {
     if (dirtyFlags.styles) updateStyles(selectedRows, selectedCols);
     if (dirtyFlags.preview) renderPreview(selectedRows, selectedCols);
@@ -253,6 +259,7 @@ function renderGame(selectedRows, selectedCols) {
     resetDirtyFlags();
 }
 
+// update style sheet variables
 function updateStyles(selectedRows, selectedCols) {
     const preview = document.getElementById("preview");
 
@@ -262,6 +269,7 @@ function updateStyles(selectedRows, selectedCols) {
         const boxSize = 21;
         const minBoxSize = 1;
 
+        // if preview would get too small, disable preview, otherwise update aspect ratio
         if ((boxSize * colHintAmount / selectedCols) < minBoxSize || (boxSize * rowHintAmount / selectedRows) < minBoxSize) {
             preview.style.display = "none";
         } else {
@@ -274,6 +282,7 @@ function updateStyles(selectedRows, selectedCols) {
     }
 }
 
+// render preview, will also update the preview board containing preview dom elements
 function renderPreview(selectedRows, selectedCols) {
     const preview = document.getElementById("preview");
     const tempPreview = document.createDocumentFragment();
@@ -296,12 +305,14 @@ function renderPreview(selectedRows, selectedCols) {
 
     preview.replaceChildren(tempPreview);
 
+    // assign DOM board to a variable as a 2D array
     previewInDocument = Array.from(document.getElementById("preview").querySelectorAll(".previewRow"));
     previewInDocument = previewInDocument.map(previewRow =>
         Array.from(previewRow.querySelectorAll(".previewBox"))
     );
 }
 
+//render colHints
 function renderColHints(selectedCols) {
     const colHintsInDocument = document.getElementById("colHints");
     const tempColHintsInDocument = document.createDocumentFragment();
@@ -330,6 +341,7 @@ function renderColHints(selectedCols) {
     colHintsInDocument.replaceChildren(tempColHintsInDocument);
 }
 
+// render rowHints
 function renderRowHints(selectedRows) {
     const rowHintsInDocument = document.getElementById("rowHints");
     const tempRowHintsInDocument = document.createDocumentFragment();
@@ -358,6 +370,7 @@ function renderRowHints(selectedRows) {
     rowHintsInDocument.replaceChildren(tempRowHintsInDocument);
 }
 
+// render playfield, will also update the playfield board containing preview dom elements
 function renderPlayfield(selectedRows, selectedCols) {
     const playfield = document.getElementById("playfield");
     const tempPlayfield = document.createDocumentFragment();
@@ -389,14 +402,15 @@ function renderPlayfield(selectedRows, selectedCols) {
     );
 }
 
+// reset dirty flags to prevent unneccessary rendering on container elements
 function resetDirtyFlags() {
     for (let flag in dirtyFlags) {
         dirtyFlags[flag] = false;
     }
 }
 
+// helper function to get the size of the largest array in a 2d array
 function getLargestSubarrayLength(array) {
-    // helper function to get the size of the largest array in a 2d array
     let maxLength = 0;
 
     for (let i = 0; i < array.length; i++) {
@@ -412,6 +426,7 @@ function getLargestSubarrayLength(array) {
 ------------- CHANGE BOARDSIZE ------------
 -----------------------------------------*/
 
+// function to change board size, compared to create baord, this will preserve already existing inputs
 function changeBoardSize(selectedCols, selectedRows) {
     const oldBoardWidth = colHints.length;
     const oldBoardHeight = rowHints.length;
