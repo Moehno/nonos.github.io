@@ -2,8 +2,14 @@
 ----------------- HEADER ------------------
 -----------------------------------------*/
 
+const creationForm = document.getElementById("creationForm");
 const sidebar = document.getElementById("sidebar");
+const changeSizeForm = document.getElementById("changeSizeForm");
 const openSidebarButton = document.getElementById("openSidebarButton");
+const savePuzzleButton = document.getElementById("savePuzzleButton");
+const loadPuzzleButton = document.getElementById("loadPuzzleButton");
+const loadPuzzleForm = document.getElementById("loadPuzzleForm");
+const domPlayfield = document.getElementById("playfield");
 
 let dirtyFlags = {
     "styles": true,
@@ -24,19 +30,18 @@ let board = [];
 -----------------------------------------*/
 
 // function to open submenus in the sidebar
-openSidebarButton.addEventListener("click", () => {
-    sidebar.classList.toggle("open");
+openSidebarButton.addEventListener("click", openSidebar);
 
-    if (sidebar.classList.contains("open")) {
-        openSidebarButton.innerHTML = "✕";
-    } else {
-        openSidebarButton.innerHTML = "☰";
-    }
-});
+// save current data in localstorage
+savePuzzleButton.addEventListener("click", savePuzzle);
+
+// trigger dialog to select which puzzle to load
+loadPuzzleButton.addEventListener("click", loadPuzzleList);
+
+// load target puzzle
+loadPuzzleForm.addEventListener("submit", loadPuzzle);
 
 // create the initial board with all empty spaces
-const creationForm = document.getElementById("creationForm");
-
 creationForm.addEventListener("submit", (event) => {
     event.preventDefault();
 
@@ -45,14 +50,12 @@ creationForm.addEventListener("submit", (event) => {
 
     createBoard(rowValue, colValue);
     renderGame(rowValue, colValue);
-    
+
     document.getElementById("outerGameWrapper").classList.remove("hidden");
     document.getElementById("creationForm").classList.add("hidden");
 });
 
 // change size of the board, will preserve playerinputs 
-const changeSizeForm = document.getElementById("changeSizeForm");
-
 changeSizeForm.addEventListener("submit", (event) => {
     event.preventDefault();
 
@@ -72,7 +75,7 @@ changeSizeForm.addEventListener("submit", (event) => {
 });
 
 // register playerinput in playfield area to check or uncheck spaces
-document.getElementById("playfield").addEventListener("pointerup", (element) => {
+domPlayfield.addEventListener("pointerup", (element) => {
     const targetBox = element.target.closest(".playfieldBox");
 
     // cancel function if input is not a valid box
@@ -180,9 +183,7 @@ function getHint(selectedRow, selectedCol) {
     colHints[selectedCol] = currentColHints;
 
     // set dirty flags
-    dirtyFlags.styles = true;
-    dirtyFlags.rowHints = true;
-    dirtyFlags.colHints = true;
+    setDirtyFlags("styles", "rowHints", "colHints")
 
     renderGame(rowHints.length, colHints.length);
 }
@@ -402,6 +403,12 @@ function renderPlayfield(selectedRows, selectedCols) {
     );
 }
 
+function setDirtyFlags(...flags) {
+    flags.forEach(flag => {
+        dirtyFlags[flag] = true;
+    });
+}
+
 // reset dirty flags to prevent unneccessary rendering on container elements
 function resetDirtyFlags() {
     for (let flag in dirtyFlags) {
@@ -461,10 +468,7 @@ function increaseBoardWidth(selectedCols) {
     }
 
     // set dirty flags
-    dirtyFlags.styles = true;
-    dirtyFlags.preview = true;
-    dirtyFlags.colHints = true;
-    dirtyFlags.playfield = true;
+    setDirtyFlags("styles", "preview", "colHints", "playfield");
 }
 
 function reduceBoardWidth(selectedCols) {
@@ -477,10 +481,7 @@ function reduceBoardWidth(selectedCols) {
     colHints.splice(selectedCols);
 
     // set dirty flags
-    dirtyFlags.styles = true;
-    dirtyFlags.preview = true;
-    dirtyFlags.colHints = true;
-    dirtyFlags.playfield = true;
+    setDirtyFlags("styles", "preview", "colHints", "playfield");
 }
 
 function increaseBoardHeight(selectedRows, selectedCols) {
@@ -498,10 +499,7 @@ function increaseBoardHeight(selectedRows, selectedCols) {
     }
 
     // set dirty flags
-    dirtyFlags.styles = true;
-    dirtyFlags.preview = true;
-    dirtyFlags.rowHints = true;
-    dirtyFlags.playfield = true;
+    setDirtyFlags("styles", "preview", "rowHints", "playfield");
 }
 
 function reduceBoardHeight(selectedRows) {
@@ -512,12 +510,86 @@ function reduceBoardHeight(selectedRows) {
     rowHints.splice(selectedRows);
 
     // set dirty flags
-    dirtyFlags.styles = true;
-    dirtyFlags.preview = true;
-    dirtyFlags.rowHints = true;
-    dirtyFlags.playfield = true;
+    setDirtyFlags("styles", "preview", "rowHints", "playfield");
 }
 
+
+/* ----------------------------------------
+------------- UI & NAVIGATION -------------
+-----------------------------------------*/
+
+function openSidebar() {
+    sidebar.classList.toggle("open");
+
+    if (sidebar.classList.contains("open")) {
+        openSidebarButton.innerHTML = "✕";
+    } else {
+        openSidebarButton.innerHTML = "☰";
+    }
+}
+
+function savePuzzle(event) {
+    {
+        event.stopPropagation();
+
+        if (board.length === 0) {
+            window.alert("Speichern nicht möglich: Es wurde noch kein Board erstellt");
+        } else {
+            const saveName = prompt("Gib einen namen ein (min. 3 Zeichen)");
+
+            if (saveName.length < 3) {
+                window.alert("Der Name muss mindestens 3 Zeichen enthalten");
+            } else {
+                window.alert("Das Puzzle wurde gespeichert");
+                const puzzleData = JSON.stringify({ "board": board, "colHints": colHints, "rowHints": rowHints });
+                localStorage.setItem(saveName, puzzleData);
+            }
+        }
+    }
+}
+
+function loadPuzzleList(event) {
+    event.stopPropagation();
+
+    const loadPuzzleDialogInDocument = document.getElementById("loadPuzzleDialog");
+    const loadPuzzleListInDocument = document.getElementById("loadPuzzleList");
+    const tempLoadPuzzleList = document.createDocumentFragment();
+    const puzzleAmount = localStorage.length;
+    const maxLength = 10;
+
+    for (let i = 0; i < puzzleAmount; i++) {
+        const puzzleName = localStorage.key(i);
+        const listEntry = document.createElement("option");
+
+        listEntry.classList.add("loadPuzzleListEntry");
+        listEntry.value = puzzleName;
+        listEntry.textContent = puzzleName;
+
+        tempLoadPuzzleList.appendChild(listEntry);
+    }
+
+    loadPuzzleListInDocument.replaceChildren(tempLoadPuzzleList);
+    loadPuzzleListInDocument.setAttribute("size", Math.min(puzzleAmount, maxLength));
+
+    loadPuzzleDialogInDocument.showModal();
+}
+
+function loadPuzzle(event) {
+    event.preventDefault();
+
+    document.getElementById("loadPuzzleDialog").close();
+    const puzzleName = document.getElementById("loadPuzzleList").value;
+    const puzzle = JSON.parse(localStorage.getItem(puzzleName));
+
+    board = puzzle.board;
+    colHints = puzzle.colHints;
+    rowHints = puzzle.rowHints;
+
+    setDirtyFlags("styles", "preview", "colHints", "rowHints", "playfield");
+    renderGame(rowHints.length, colHints.length);
+    document.getElementById("outerGameWrapper").classList.remove("hidden");
+    document.getElementById("creationForm").classList.add("hidden");
+}
 
 /* ----------------------------------------
 ------------------ OTHER ------------------
