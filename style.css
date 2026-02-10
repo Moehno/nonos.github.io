@@ -161,16 +161,20 @@ body {
     width: 25px;
     padding: 4px;
     background-color: white;
-    transition: 0.1s ease;
-    box-shadow: inset 0px 0px 1px 2px white;
+    transition: background-color 0.1s ease;
+    transition: box-shadow 0.1s ease;
+    box-shadow: inset 0px 0px 0px 2px white;
 }
 
 .playfieldBox.checked {
     background-color: black;
     background-clip: padding-box;
-    box-shadow: inset 0px 0px 1px 2px white;
     padding: 4px;
-    transition: 0.1s ease;
+    transition: background-color 0.1s ease;
+}
+
+.playfieldBox.highlighted {
+    box-shadow: inset 0px 0px 0px 2px red ;
 }
 
 /* ----------------------------------------
@@ -260,6 +264,32 @@ body {
     transform: rotate(180deg);
 }
 
+/* ----------- TOOLBAR -------------*/
+
+.toolbarWrapper {
+    display: flex;
+    position: fixed;
+    bottom: 2%;
+    left: 50%;
+    transform: translate(-50%, 0);
+}
+
+.toolbar {
+    display: flex;
+    gap: 5px;
+}
+
+.toolbarIcon {
+    display: flex;
+    border: 1px solid black;
+    width: 50px;
+    height: 25px;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    cursor: pointer;
+}
+
 /* ----------- SAVE & LOAD DATA -------------*/
 
 dialog::backdrop {
@@ -282,7 +312,6 @@ dialog:not([open]) {
     padding: 5px;
     /* margin: 10px; */
 }
-
 
 /* ----------- OTHER -------------*/
 
