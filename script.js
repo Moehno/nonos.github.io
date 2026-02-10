@@ -10,6 +10,9 @@ const savePuzzleButton = document.getElementById("savePuzzleButton");
 const loadPuzzleButton = document.getElementById("loadPuzzleButton");
 const loadPuzzleForm = document.getElementById("loadPuzzleForm");
 const domPlayfield = document.getElementById("playfield");
+const clickInputButton = document.getElementById("clickInputButton");
+const dragInputButton = document.getElementById("dragInputButton");
+const lineInputButton = document.getElementById("lineInputButton");
 
 let dirtyFlags = {
     "styles": true,
@@ -24,6 +27,8 @@ let boardInDocument = [];
 let rowHints = [];
 let colHints = [];
 let board = [];
+
+let controller = null;
 
 /* ----------------------------------------
 ------------- EVENT LISTENERS -------------
@@ -42,64 +47,22 @@ loadPuzzleButton.addEventListener("click", loadPuzzleList);
 loadPuzzleForm.addEventListener("submit", loadPuzzle);
 
 // create the initial board with all empty spaces
-creationForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-
-    const rowValue = creationForm.querySelector("#creationRowSelector").value;
-    const colValue = creationForm.querySelector("#creationColSelector").value;
-
-    createBoard(rowValue, colValue);
-    renderGame(rowValue, colValue);
-
-    document.getElementById("outerGameWrapper").classList.remove("hidden");
-    document.getElementById("creationForm").classList.add("hidden");
-});
+creationForm.addEventListener("submit", validateBoardCreation);
 
 // change size of the board, will preserve playerinputs 
-changeSizeForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-
-    const rowValue = changeSizeForm.querySelector("#changeSizeRowSelector").value;
-    const colValue = changeSizeForm.querySelector("#changeSizeColSelector").value;
-
-    if (!rowValue || !colValue) {
-        console.log("Größe ändern: Ungültige Werte eingegeben");
-        return;
-    }
-
-    if ((rowValue === rowHints.length) && (colValue === colHints.length)) {
-        window.alert("Das Board hat bereits diese Größe!");
-    } else {
-        changeBoardSize(colValue, rowValue);
-    }
-});
+changeSizeForm.addEventListener("submit", validateChangeBoardSize);
 
 // register playerinput in playfield area to check or uncheck spaces
-domPlayfield.addEventListener("pointerup", (element) => {
-    const targetBox = element.target.closest(".playfieldBox");
+// domPlayfield.addEventListener("pointerup", createBoardInteraction);
 
-    // cancel function if input is not a valid box
-    if (!targetBox) return;
+// change input methode to "click"
+clickInputButton.addEventListener("click", () => changeInputMethod(boardClickInput));
 
-    const targetRow = targetBox.dataset.row;
-    const targetCol = targetBox.dataset.col;
-    const targetValue = board[targetRow][targetCol];
+// change input methdo to "drag"
+dragInputButton.addEventListener("click", () => changeInputMethod(boardDragInput));
 
-    if (targetValue === 0) {
-        board[targetRow][targetCol] = 1;
-        boardInDocument[targetRow][targetCol].classList.add("checked");
-        previewInDocument[targetRow][targetCol].classList.add("checked");
-        getHint(targetRow, targetCol);
-    } else if (targetValue === 1) {
-        board[targetRow][targetCol] = 0;
-        boardInDocument[targetRow][targetCol].classList.remove("checked");
-        previewInDocument[targetRow][targetCol].classList.remove("checked");
-        getHint(targetRow, targetCol);
-    } else {
-        console.log("Invalid space value");
-    }
-});
-
+// change input method to "line"
+lineInputButton.addEventListener("click", () => changeInputMethod(boardLineInput));
 
 /* ----------------------------------------
 --------- INTERNAL BOARD & HINTS ----------
@@ -403,6 +366,22 @@ function renderPlayfield(selectedRows, selectedCols) {
     );
 }
 
+// helper function to get the size of the largest array in a 2d array
+function getLargestSubarrayLength(array) {
+    let maxLength = 0;
+
+    for (let i = 0; i < array.length; i++) {
+        if (array[i].length > maxLength) {
+            maxLength = array[i].length;
+        }
+    }
+
+    return maxLength;
+}
+
+/* ------------- DIRTY FLAGS -------------*/
+
+// function to easily set any number of dirty flags
 function setDirtyFlags(...flags) {
     flags.forEach(flag => {
         dirtyFlags[flag] = true;
@@ -416,17 +395,155 @@ function resetDirtyFlags() {
     }
 }
 
-// helper function to get the size of the largest array in a 2d array
-function getLargestSubarrayLength(array) {
-    let maxLength = 0;
+/* ----------------------------------------
+------------ BOARD INTERACTION ------------
+-----------------------------------------*/
 
-    for (let i = 0; i < array.length; i++) {
-        if (array[i].length > maxLength) {
-            maxLength = array[i].length;
+function changeInputMethod(interactionFunction) {
+    if (controller) controller.abort();
+
+    controller = new AbortController();
+    interactionFunction(controller.signal);
+}
+
+/* ------------ CLICK INPUT -------------*/
+
+function boardClickInput(signal) {
+
+    function onClick(event) {
+        const targetBox = event.target.closest(".playfieldBox");
+
+        // cancel function if input is not a valid box
+        if (!targetBox) return;
+
+        const targetRow = targetBox.dataset.row;
+        const targetCol = targetBox.dataset.col;
+        const targetValue = board[targetRow][targetCol];
+
+        if (targetValue === 0) {
+            board[targetRow][targetCol] = 1;
+            boardInDocument[targetRow][targetCol].classList.add("checked");
+            previewInDocument[targetRow][targetCol].classList.add("checked");
+            getHint(targetRow, targetCol);
+        } else if (targetValue === 1) {
+            board[targetRow][targetCol] = 0;
+            boardInDocument[targetRow][targetCol].classList.remove("checked");
+            previewInDocument[targetRow][targetCol].classList.remove("checked");
+            getHint(targetRow, targetCol);
+        } else {
+            console.log("Invalid space value");
         }
     }
 
-    return maxLength;
+    domPlayfield.addEventListener("pointerup", onClick, { signal });
+}
+
+/* ------------- DRAG INPUT -------------*/
+
+function boardDragInput(signal) {
+    let captureStarted = false;
+    let targetElements = [];
+
+    function onPointerDown(event) {
+        domPlayfield.setPointerCapture(event.pointerId);
+
+        captureStarted = true;
+        let capturedBox = event.target.closest(".playfieldBox");
+
+        if (capturedBox) {
+            capturedBox.classList.add("highlighted");
+            targetElements.push(capturedBox);
+        }
+
+        console.log("Pointer down", targetElements);
+    }
+
+    function onPointerMove(event) {
+        if (captureStarted) {
+            let capturedBox = getBoxAt(event.clientX, event.clientY);
+
+            if (capturedBox && !targetElements.includes(capturedBox)) {
+                capturedBox.classList.add("highlighted");
+                targetElements.push(capturedBox);
+
+                console.log("New Box found: ", capturedBox);
+            }
+        }
+    }
+
+    function onPointerUp(event) {
+        domPlayfield.releasePointerCapture(event.pointerId);
+
+        if (captureStarted) {
+            captureStarted = false;
+
+            switch (targetElements.length) {
+                case 0:
+                    console.log("Drag Input: No Elements found");
+                    break;
+
+                case 1:
+                    console.log("Drag Input: One Element Found: ", targetElements[0]);
+                    targetElements[0].classList.remove("highlighted");
+                    break;
+
+                default:
+                    console.log("Drag Input: Multiple Elements found: ", targetElements);
+                    targetElements.forEach(element => {
+                        element.classList.remove("highlighted");
+                    });
+                    break;
+            }
+        }
+        targetElements = [];
+    }
+
+    domPlayfield.addEventListener("pointerdown", onPointerDown, { signal });
+    domPlayfield.addEventListener("pointermove", onPointerMove, { signal });
+    domPlayfield.addEventListener("pointerup", onPointerUp, { signal });
+    domPlayfield.addEventListener("pointercancel", onPointerUp, { signal });
+}
+
+/* ------------- LINE INPUT -------------*/
+
+function boardLineInput(signal) {
+    let startElement;
+    let targetElement;
+    captureStarted = false;
+
+    function onPointerDown(event) {
+        domPlayfield.setPointerCapture(event.pointerId);
+
+        captureStarted = true;
+        let capturedBox = event.target.closest(".playfieldBox");
+        if (capturedBox) startElement = capturedBox;
+        console.log("Pointer down", capturedBox);
+    }
+
+    function onPointerMove(event) {
+        if (captureStarted) {
+            let capturedBox = getBoxAt(event.clientX, event.clientY);
+
+            if (!startElement && capturedBox) startElement = capturedBox;
+            else if (capturedBox) targetElement = capturedBox;
+        }
+    }
+
+    function onPointerUp(event) {
+        domPlayfield.releasePointerCapture(event.pointerId);
+    }
+
+    domPlayfield.addEventListener("pointerdown", onPointerDown, { signal });
+    domPlayfield.addEventListener("pointermove", onPointerMove, { signal });
+    domPlayfield.addEventListener("pointerup", onPointerUp, { signal });
+    domPlayfield.addEventListener("pointercancel", onPointerUp, { signal });
+}
+
+/* ----------- HELPER FUNCTION ----------*/
+
+function getBoxAt(x, y) {
+    const el = document.elementFromPoint(x, y);
+    return el?.closest(".playfieldBox");
 }
 
 /* ----------------------------------------
@@ -518,6 +635,38 @@ function reduceBoardHeight(selectedRows) {
 ------------- UI & NAVIGATION -------------
 -----------------------------------------*/
 
+function validateBoardCreation(event) {
+    event.preventDefault();
+
+    const rowValue = creationForm.querySelector("#creationRowSelector").value;
+    const colValue = creationForm.querySelector("#creationColSelector").value;
+
+    createBoard(rowValue, colValue);
+    renderGame(rowValue, colValue);
+    // changeInputMethod(boardClickInput);
+
+    document.getElementById("outerGameWrapper").classList.remove("hidden");
+    document.getElementById("creationForm").classList.add("hidden");
+}
+
+function validateChangeBoardSize(event) {
+    event.preventDefault();
+
+    const rowValue = changeSizeForm.querySelector("#changeSizeRowSelector").value;
+    const colValue = changeSizeForm.querySelector("#changeSizeColSelector").value;
+
+    if (!rowValue || !colValue) {
+        console.log("Größe ändern: Ungültige Werte eingegeben");
+        return;
+    }
+
+    if ((rowValue === rowHints.length) && (colValue === colHints.length)) {
+        window.alert("Das Board hat bereits diese Größe!");
+    } else {
+        changeBoardSize(colValue, rowValue);
+    }
+}
+
 function openSidebar() {
     sidebar.classList.toggle("open");
 
@@ -529,21 +678,19 @@ function openSidebar() {
 }
 
 function savePuzzle(event) {
-    {
-        event.stopPropagation();
+    event.stopPropagation();
 
-        if (board.length === 0) {
-            window.alert("Speichern nicht möglich: Es wurde noch kein Board erstellt");
+    if (board.length === 0) {
+        window.alert("Speichern nicht möglich: Es wurde noch kein Board erstellt");
+    } else {
+        const saveName = prompt("Gib einen namen ein (min. 3 Zeichen)");
+
+        if (saveName.length < 3) {
+            window.alert("Der Name muss mindestens 3 Zeichen enthalten");
         } else {
-            const saveName = prompt("Gib einen namen ein (min. 3 Zeichen)");
-
-            if (saveName.length < 3) {
-                window.alert("Der Name muss mindestens 3 Zeichen enthalten");
-            } else {
-                window.alert("Das Puzzle wurde gespeichert");
-                const puzzleData = JSON.stringify({ "board": board, "colHints": colHints, "rowHints": rowHints });
-                localStorage.setItem(saveName, puzzleData);
-            }
+            window.alert("Das Puzzle wurde gespeichert");
+            const puzzleData = JSON.stringify({ "board": board, "colHints": colHints, "rowHints": rowHints });
+            localStorage.setItem(saveName, puzzleData);
         }
     }
 }
@@ -587,6 +734,7 @@ function loadPuzzle(event) {
 
     setDirtyFlags("styles", "preview", "colHints", "rowHints", "playfield");
     renderGame(rowHints.length, colHints.length);
+
     document.getElementById("outerGameWrapper").classList.remove("hidden");
     document.getElementById("creationForm").classList.add("hidden");
 }
