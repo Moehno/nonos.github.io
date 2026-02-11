@@ -507,30 +507,88 @@ function boardDragInput(signal) {
 /* ------------- LINE INPUT -------------*/
 
 function boardLineInput(signal) {
-    let startElement;
     let targetElement;
     captureStarted = false;
 
+    let rowElements = [];
+    let colElements = [];
+
+    let startElement = {};
+
     function onPointerDown(event) {
         domPlayfield.setPointerCapture(event.pointerId);
-
+        console.log("Capture started");
         captureStarted = true;
+
         let capturedBox = event.target.closest(".playfieldBox");
-        if (capturedBox) startElement = capturedBox;
-        console.log("Pointer down", capturedBox);
+        if (capturedBox) setStartElement(capturedBox);
     }
 
     function onPointerMove(event) {
         if (captureStarted) {
             let capturedBox = getBoxAt(event.clientX, event.clientY);
 
-            if (!startElement && capturedBox) startElement = capturedBox;
-            else if (capturedBox) targetElement = capturedBox;
+            if (!startElement && capturedBox) setStartElement(capturedBox);
+            else if (capturedBox) {
+                let deltaX = Math.abs(event.clientX - startElement.x);
+                let deltaY = Math.abs(event.clientY - startElement.y);
+
+                if (deltaX >= deltaY) {
+                    targetElement = getTargetElement("x", rowElements, event.clientX);
+                } else {
+                    targetElement = getTargetElement("y", colElements, event.clientY);
+                }
+            }
         }
+
+        function getTargetElement(axis, array, eventCoords) {
+            return array.reduce((previousValue, currentValue) => {
+                if (Math.abs(currentValue[axis] - eventCoords) < Math.abs(previousValue[axis] - eventCoords)) {
+                    return currentValue;
+                } else return previousValue;
+            });
+        }
+
+        function getElementLine() {
+            
+        }
+
     }
 
     function onPointerUp(event) {
         domPlayfield.releasePointerCapture(event.pointerId);
+        captureStarted = false;
+        console.log("Capture Ended");
+    }
+
+    function setStartElement(element) {
+        startElement.el = element;
+        startElement.row = element.dataset.row;
+        startElement.col = element.dataset.col;
+        startElement.rect = element.getBoundingClientRect();
+        startElement.x = startElement.rect.x + startElement.rect.width / 2;
+        startElement.y = startElement.rect.y + startElement.rect.height / 2;
+
+        rowElements = Array.from(domPlayfield.querySelectorAll(`[data-row="${element.dataset.row}"]`));
+        colElements = Array.from(domPlayfield.querySelectorAll(`[data-col="${element.dataset.col}"]`));
+
+        rowElements = rowElements.map(rowElement => {
+            const rect = rowElement.getBoundingClientRect();
+            return {
+                "el": rowElement,
+                "x": rect.x + rect.width / 2,
+                "y": rect.y + rect.height / 2
+            };
+        });
+
+        colElements = colElements.map(colElement => {
+            const rect = colElement.getBoundingClientRect();
+            return {
+                "el": colElement,
+                "x": rect.x + rect.width / 2,
+                "y": rect.y + rect.height / 2
+            };
+        });
     }
 
     domPlayfield.addEventListener("pointerdown", onPointerDown, { signal });
