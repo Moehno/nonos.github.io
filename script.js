@@ -409,33 +409,50 @@ function changeInputMethod(interactionFunction) {
 /* ------------ CLICK INPUT -------------*/
 
 function boardClickInput(signal) {
+    let targetElement;
+    let captureStarted = false;
 
-    function onClick(event) {
-        const targetBox = event.target.closest(".playfieldBox");
+    function onPointerDown(event) {
+        domPlayfield.setPointerCapture(event.pointerId);
+        captureStarted = true;
+        console.log("Click Input: Capture started");
 
-        // cancel function if input is not a valid box
-        if (!targetBox) return;
-
-        const targetRow = targetBox.dataset.row;
-        const targetCol = targetBox.dataset.col;
-        const targetValue = board[targetRow][targetCol];
-
-        if (targetValue === 0) {
-            board[targetRow][targetCol] = 1;
-            boardInDocument[targetRow][targetCol].classList.add("checked");
-            previewInDocument[targetRow][targetCol].classList.add("checked");
-            getHint(targetRow, targetCol);
-        } else if (targetValue === 1) {
-            board[targetRow][targetCol] = 0;
-            boardInDocument[targetRow][targetCol].classList.remove("checked");
-            previewInDocument[targetRow][targetCol].classList.remove("checked");
-            getHint(targetRow, targetCol);
-        } else {
-            console.log("Invalid space value");
+        let capturedBox = event.target.closest(".playfieldBox");
+        if (capturedBox) {
+            targetElement = capturedBox;
+            targetElement.classList.add("highlighted");
         }
     }
 
-    domPlayfield.addEventListener("pointerup", onClick, { signal });
+    function onPointerMove(event) {
+        if (captureStarted) {
+            let capturedBox = getBoxAt(event.clientX, event.clientY);
+            if (capturedBox && capturedBox !== targetElement) {
+                targetElement.classList.remove("highlighted");
+                targetElement = capturedBox;
+                capturedBox.classList.add("highlighted");
+            }
+        }
+    }
+
+    function onPointerUp(event) {
+        domPlayfield.releasePointerCapture(event.pointerId);
+
+        if (captureStarted) {
+            captureStarted = false;
+            console.log("Click Input: Capture ended");
+
+            if (targetElement) {
+                targetElement.classList.remove("highlighted");
+                console.log("Click Input: Element found: ", targetElement);
+            }
+        }
+    }
+
+    domPlayfield.addEventListener("pointerdown", onPointerDown, { signal });
+    domPlayfield.addEventListener("pointermove", onPointerMove, { signal });
+    domPlayfield.addEventListener("pointerup", onPointerUp, { signal });
+    domPlayfield.addEventListener("pointercancel", onPointerUp, { signal });
 }
 
 /* ------------- DRAG INPUT -------------*/
@@ -446,27 +463,18 @@ function boardDragInput(signal) {
 
     function onPointerDown(event) {
         domPlayfield.setPointerCapture(event.pointerId);
-
         captureStarted = true;
+        console.log("Drag Input: Capture started")
+
         let capturedBox = event.target.closest(".playfieldBox");
-
-        if (capturedBox) {
-            capturedBox.classList.add("highlighted");
-            targetElements.push(capturedBox);
-        }
-
-        console.log("Pointer down", targetElements);
+        if (capturedBox) addHighlight(capturedBox, targetElements);
     }
 
     function onPointerMove(event) {
         if (captureStarted) {
             let capturedBox = getBoxAt(event.clientX, event.clientY);
-
             if (capturedBox && !targetElements.includes(capturedBox)) {
-                capturedBox.classList.add("highlighted");
-                targetElements.push(capturedBox);
-
-                console.log("New Box found: ", capturedBox);
+                addHighlight(capturedBox, targetElements);
             }
         }
     }
@@ -476,6 +484,7 @@ function boardDragInput(signal) {
 
         if (captureStarted) {
             captureStarted = false;
+            console.log("Drag Input: Capture Ended");
 
             switch (targetElements.length) {
                 case 0:
@@ -494,8 +503,8 @@ function boardDragInput(signal) {
                     });
                     break;
             }
+            targetElements.length = 0;
         }
-        targetElements = [];
     }
 
     domPlayfield.addEventListener("pointerdown", onPointerDown, { signal });
@@ -508,16 +517,18 @@ function boardDragInput(signal) {
 
 function boardLineInput(signal) {
     let targetElement;
-    captureStarted = false;
-
-    let rowElements = [];
-    let colElements = [];
+    let captureStarted = false;
 
     let startElement = {};
 
+    let rowElements = [];
+    let colElements = [];
+    let highlightedElements = [];
+
+
     function onPointerDown(event) {
         domPlayfield.setPointerCapture(event.pointerId);
-        console.log("Capture started");
+        console.log("Line Input: Capture started");
         captureStarted = true;
 
         let capturedBox = event.target.closest(".playfieldBox");
@@ -532,33 +543,74 @@ function boardLineInput(signal) {
             else if (capturedBox) {
                 let deltaX = Math.abs(event.clientX - startElement.x);
                 let deltaY = Math.abs(event.clientY - startElement.y);
+                tempArray = [];
 
                 if (deltaX >= deltaY) {
                     targetElement = getTargetElement("x", rowElements, event.clientX);
+
+                    // save current selection temporarily
+                    tempArray = rowElements
+                        .filter(element => (element.col >= Math.min(startElement.col, targetElement.col)) && (element.col <= Math.max(startElement.col, targetElement.col)))
+                        .map(element => element.el);
+
+                    // remove highlight from boxes not included in current selection
+                    highlightedElements
+                        .filter(element => !tempArray.includes(element))
+                        .forEach(element => removeHighlight(element, highlightedElements));
+
+                    // highlight boxes from current selection which are not already highlighted
+                    tempArray
+                        .filter(element => !highlightedElements.includes(element))
+                        .forEach(element => addHighlight(element, highlightedElements));
+
                 } else {
                     targetElement = getTargetElement("y", colElements, event.clientY);
+
+                    // save current selection temporarily
+                    tempArray = colElements
+                        .filter(element => (element.row >= Math.min(startElement.row, targetElement.row)) && (element.row <= Math.max(startElement.row, targetElement.row)))
+                        .map(element => element.el);
+
+                    // remove highlight from boxes not included in current selection
+                    highlightedElements
+                        .filter(element => !tempArray.includes(element))
+                        .forEach(element => removeHighlight(element, highlightedElements));
+
+                    // highlight boxes from current selection which are not already highlighted
+                    tempArray
+                        .filter(element => !highlightedElements.includes(element))
+                        .forEach(element => addHighlight(element, highlightedElements));
                 }
             }
         }
-
-        function getTargetElement(axis, array, eventCoords) {
-            return array.reduce((previousValue, currentValue) => {
-                if (Math.abs(currentValue[axis] - eventCoords) < Math.abs(previousValue[axis] - eventCoords)) {
-                    return currentValue;
-                } else return previousValue;
-            });
-        }
-
-        function getElementLine() {
-            
-        }
-
     }
 
     function onPointerUp(event) {
         domPlayfield.releasePointerCapture(event.pointerId);
-        captureStarted = false;
-        console.log("Capture Ended");
+
+        if (captureStarted) {
+            captureStarted = false;
+            console.log("Line Input: Capture Ended");
+
+            if (highlightedElements.length > 0) {
+                console.log("Line Input: Element(s) found: ", highlightedElements);
+                highlightedElements.forEach(element => {
+                    element.classList.remove("highlighted");
+                })
+
+                highlightedElements.length = 0;
+            }
+        }
+    }
+
+    /* ---------- LOCAL FUNCTIONS -----------*/
+
+    function getTargetElement(axis, array, eventCoords) {
+        return array.reduce((previousValue, currentValue) => {
+            if (Math.abs(currentValue[axis] - eventCoords) < Math.abs(previousValue[axis] - eventCoords)) {
+                return currentValue;
+            } else return previousValue;
+        });
     }
 
     function setStartElement(element) {
@@ -569,6 +621,8 @@ function boardLineInput(signal) {
         startElement.x = startElement.rect.x + startElement.rect.width / 2;
         startElement.y = startElement.rect.y + startElement.rect.height / 2;
 
+        addHighlight(element);
+
         rowElements = Array.from(domPlayfield.querySelectorAll(`[data-row="${element.dataset.row}"]`));
         colElements = Array.from(domPlayfield.querySelectorAll(`[data-col="${element.dataset.col}"]`));
 
@@ -576,6 +630,8 @@ function boardLineInput(signal) {
             const rect = rowElement.getBoundingClientRect();
             return {
                 "el": rowElement,
+                "row": rowElement.dataset.row,
+                "col": rowElement.dataset.col,
                 "x": rect.x + rect.width / 2,
                 "y": rect.y + rect.height / 2
             };
@@ -585,6 +641,8 @@ function boardLineInput(signal) {
             const rect = colElement.getBoundingClientRect();
             return {
                 "el": colElement,
+                "row": colElement.dataset.row,
+                "col": colElement.dataset.col,
                 "x": rect.x + rect.width / 2,
                 "y": rect.y + rect.height / 2
             };
@@ -597,11 +655,24 @@ function boardLineInput(signal) {
     domPlayfield.addEventListener("pointercancel", onPointerUp, { signal });
 }
 
-/* ----------- HELPER FUNCTION ----------*/
+/* ---------- HELPER FUNCTIONS ----------*/
 
 function getBoxAt(x, y) {
     const el = document.elementFromPoint(x, y);
     return el?.closest(".playfieldBox");
+}
+
+function addHighlight(element, array) {
+    if (element) element.classList.add("highlighted");
+    if (array) array.push(element);
+}
+
+function removeHighlight(element, array) {
+    if (element && array) {
+        const index = array.indexOf(element);
+        if (index >= 0) array.splice(index, 1);
+        element.classList.remove("highlighted");
+    }
 }
 
 /* ----------------------------------------
