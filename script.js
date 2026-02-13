@@ -444,6 +444,7 @@ function boardClickInput(signal) {
 
             if (targetElement) {
                 targetElement.classList.remove("highlighted");
+                updateBoxChecks(board[targetElement.dataset.row][targetElement.dataset.col], targetElement);
                 console.log("Click Input: Element found: ", targetElement);
             }
         }
@@ -494,6 +495,7 @@ function boardDragInput(signal) {
                 case 1:
                     console.log("Drag Input: One Element Found: ", targetElements[0]);
                     targetElements[0].classList.remove("highlighted");
+                    updateBoxChecks(board[targetElements[0].dataset.row][targetElements[0].dataset.col], targetElements);
                     break;
 
                 default:
@@ -501,6 +503,7 @@ function boardDragInput(signal) {
                     targetElements.forEach(element => {
                         element.classList.remove("highlighted");
                     });
+                    updateBoxChecks(board[targetElements[0].dataset.row][targetElements[0].dataset.col], targetElements);
                     break;
             }
             targetElements.length = 0;
@@ -594,9 +597,12 @@ function boardLineInput(signal) {
 
             if (highlightedElements.length > 0) {
                 console.log("Line Input: Element(s) found: ", highlightedElements);
+
                 highlightedElements.forEach(element => {
                     element.classList.remove("highlighted");
                 })
+
+                updateBoxChecks(board[startElement.row][startElement.col], highlightedElements);
 
                 highlightedElements.length = 0;
             }
@@ -673,6 +679,23 @@ function removeHighlight(element, array) {
         if (index >= 0) array.splice(index, 1);
         element.classList.remove("highlighted");
     }
+}
+
+function updateBoxChecks(checked, target) {
+    // if target is a single element, treat it as array
+    const elements = Array.isArray(target) ? target : [target];
+    console.log(target);
+
+    // check or uncheck all elements based on checked status
+    elements.forEach(element => {
+        if (checked) {
+            element.classList.remove("checked");
+            board[element.dataset.row][element.dataset.col] = 0;
+        } else {
+            element.classList.add("checked");
+            board[element.dataset.row][element.dataset.col] = 1;
+        }
+    });
 }
 
 /* ----------------------------------------
