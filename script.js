@@ -13,6 +13,7 @@ const domPlayfield = document.getElementById("playfield");
 const clickInputButton = document.getElementById("clickInputButton");
 const dragInputButton = document.getElementById("dragInputButton");
 const lineInputButton = document.getElementById("lineInputButton");
+const fillInputButton = document.getElementById("fillInputButton");
 
 let dirtyFlags = {
     "styles": true,
@@ -52,9 +53,6 @@ creationForm.addEventListener("submit", validateBoardCreation);
 // change size of the board, will preserve playerinputs 
 changeSizeForm.addEventListener("submit", validateChangeBoardSize);
 
-// register playerinput in playfield area to check or uncheck spaces
-// domPlayfield.addEventListener("pointerup", createBoardInteraction);
-
 // change input methode to "click"
 clickInputButton.addEventListener("click", () => changeInputMethod(boardClickInput));
 
@@ -63,6 +61,9 @@ dragInputButton.addEventListener("click", () => changeInputMethod(boardDragInput
 
 // change input method to "line"
 lineInputButton.addEventListener("click", () => changeInputMethod(boardLineInput));
+
+// change input mehtod to "fill"
+fillInputButton.addEventListener("click", () => changeInputMethod(boardFillInput))
 
 /* ----------------------------------------
 --------- INTERNAL BOARD & HINTS ----------
@@ -144,11 +145,6 @@ function getHint(selectedRow, selectedCol) {
     // output into global arrays
     rowHints[selectedRow] = currentRowHints;
     colHints[selectedCol] = currentColHints;
-
-    // set dirty flags
-    setDirtyFlags("styles", "rowHints", "colHints")
-
-    renderGame(rowHints.length, colHints.length);
 }
 
 // function the gather all hints in the board, used when changing board size
@@ -215,6 +211,7 @@ function getAllHints() {
 
 // render all elements with dirty flags
 function renderGame(selectedRows, selectedCols) {
+    console.log("Render Started");
     if (dirtyFlags.styles) updateStyles(selectedRows, selectedCols);
     if (dirtyFlags.preview) renderPreview(selectedRows, selectedCols);
     if (dirtyFlags.colHints) renderColHints(selectedCols);
@@ -413,9 +410,9 @@ function boardClickInput(signal) {
     let captureStarted = false;
 
     function onPointerDown(event) {
+        console.log("Click Input: Capture started");
         domPlayfield.setPointerCapture(event.pointerId);
         captureStarted = true;
-        console.log("Click Input: Capture started");
 
         let capturedBox = event.target.closest(".playfieldBox");
         if (capturedBox) {
@@ -439,13 +436,13 @@ function boardClickInput(signal) {
         domPlayfield.releasePointerCapture(event.pointerId);
 
         if (captureStarted) {
-            captureStarted = false;
             console.log("Click Input: Capture ended");
+            captureStarted = false;
 
             if (targetElement) {
+                console.log("Click Input: Element found: ", targetElement);
                 targetElement.classList.remove("highlighted");
                 updateBoxChecks(board[targetElement.dataset.row][targetElement.dataset.col], targetElement);
-                console.log("Click Input: Element found: ", targetElement);
             }
         }
     }
@@ -463,9 +460,9 @@ function boardDragInput(signal) {
     let targetElements = [];
 
     function onPointerDown(event) {
+        console.log("Drag Input: Capture started");
         domPlayfield.setPointerCapture(event.pointerId);
         captureStarted = true;
-        console.log("Drag Input: Capture started")
 
         let capturedBox = event.target.closest(".playfieldBox");
         if (capturedBox) addHighlight(capturedBox, targetElements);
@@ -530,12 +527,15 @@ function boardLineInput(signal) {
 
 
     function onPointerDown(event) {
-        domPlayfield.setPointerCapture(event.pointerId);
         console.log("Line Input: Capture started");
+        domPlayfield.setPointerCapture(event.pointerId);
         captureStarted = true;
 
         let capturedBox = event.target.closest(".playfieldBox");
-        if (capturedBox) setStartElement(capturedBox);
+        if (capturedBox) {
+            setStartElement(capturedBox);
+            addHighlight(capturedBox, highlightedElements);
+        }
     }
 
     function onPointerMove(event) {
@@ -592,8 +592,8 @@ function boardLineInput(signal) {
         domPlayfield.releasePointerCapture(event.pointerId);
 
         if (captureStarted) {
-            captureStarted = false;
             console.log("Line Input: Capture Ended");
+            captureStarted = false;
 
             if (highlightedElements.length > 0) {
                 console.log("Line Input: Element(s) found: ", highlightedElements);
@@ -627,8 +627,6 @@ function boardLineInput(signal) {
         startElement.x = startElement.rect.x + startElement.rect.width / 2;
         startElement.y = startElement.rect.y + startElement.rect.height / 2;
 
-        addHighlight(element);
-
         rowElements = Array.from(domPlayfield.querySelectorAll(`[data-row="${element.dataset.row}"]`));
         colElements = Array.from(domPlayfield.querySelectorAll(`[data-col="${element.dataset.col}"]`));
 
@@ -661,6 +659,56 @@ function boardLineInput(signal) {
     domPlayfield.addEventListener("pointercancel", onPointerUp, { signal });
 }
 
+/* ------------- FILL INPUT --------------*/
+
+function boardFillInput(signal) {
+    let targetElement;
+    let captureStarted = false;
+
+    function onPointerDown(event) {
+        console.log("Click Input: Capture started");
+        domPlayfield.setPointerCapture(event.pointerId);
+        captureStarted = true;
+
+        let capturedBox = event.target.closest(".playfieldBox");
+        if (capturedBox) {
+            targetElement = capturedBox;
+            targetElement.classList.add("highlighted");
+        }
+    }
+
+    function onPointerMove(event) {
+        if (captureStarted) {
+            let capturedBox = getBoxAt(event.clientX, event.clientY);
+            if (capturedBox && capturedBox !== targetElement) {
+                targetElement.classList.remove("highlighted");
+                targetElement = capturedBox;
+                capturedBox.classList.add("highlighted");
+            }
+        }
+    }
+
+    function onPointerUp(event) {
+        domPlayfield.releasePointerCapture(event.pointerId);
+
+        if (captureStarted) {
+            console.log("Click Input: Capture ended");
+            captureStarted = false;
+
+            if (targetElement) {
+                console.log("Click Input: Element found: ", targetElement);
+                targetElement.classList.remove("highlighted");
+                updateBoxChecks(board[targetElement.dataset.row][targetElement.dataset.col], targetElement);
+            }
+        }
+    }
+
+    domPlayfield.addEventListener("pointerdown", onPointerDown, { signal });
+    domPlayfield.addEventListener("pointermove", onPointerMove, { signal });
+    domPlayfield.addEventListener("pointerup", onPointerUp, { signal });
+    domPlayfield.addEventListener("pointercancel", onPointerUp, { signal });
+}
+
 /* ---------- HELPER FUNCTIONS ----------*/
 
 function getBoxAt(x, y) {
@@ -684,18 +732,57 @@ function removeHighlight(element, array) {
 function updateBoxChecks(checked, target) {
     // if target is a single element, treat it as array
     const elements = Array.isArray(target) ? target : [target];
-    console.log(target);
+
+    // determine whether to check full board or make each check separat
+    const breakEven = 0.6 * (rowHints.length * colHints.length) / (rowHints.length + colHints.length);
+
+    if (elements.length > breakEven) fullCheck();
+    else individualChecks();
 
     // check or uncheck all elements based on checked status
-    elements.forEach(element => {
-        if (checked) {
-            element.classList.remove("checked");
-            board[element.dataset.row][element.dataset.col] = 0;
-        } else {
-            element.classList.add("checked");
-            board[element.dataset.row][element.dataset.col] = 1;
-        }
-    });
+    // check full board
+    function fullCheck() {
+        console.log("full check");
+        elements.forEach(element => {
+            const elRow = element.dataset.row;
+            const elCol = element.dataset.col;
+            if (checked) {
+                element.classList.remove("checked");
+                previewInDocument[elRow][elCol].classList.remove("checked");
+                board[elRow][elCol] = 0;
+            } else {
+                element.classList.add("checked");
+                previewInDocument[elRow][elCol].classList.add("checked");
+                board[elRow][elCol] = 1;
+            }
+        });
+
+        getAllHints();
+        setDirtyFlags("styles", "rowHints", "colHints");
+        renderGame(rowHints.length, colHints.length);
+    }
+
+    // for each target, check row and col seperately
+    function individualChecks() {
+        console.log("individual checks");
+        elements.forEach(element => {
+            const elRow = element.dataset.row;
+            const elCol = element.dataset.col;
+            if (checked) {
+                element.classList.remove("checked");
+                previewInDocument[elRow][elCol].classList.remove("checked");
+                board[elRow][elCol] = 0;
+            } else {
+                element.classList.add("checked");
+                previewInDocument[elRow][elCol].classList.add("checked");
+                board[elRow][elCol] = 1;
+            }
+            getHint(elRow, elCol);
+        });
+
+        setDirtyFlags("styles", "rowHints", "colHints");
+        renderGame(rowHints.length, colHints.length);
+    }
 }
 
 /* ----------------------------------------
@@ -720,7 +807,6 @@ function changeBoardSize(selectedCols, selectedRows) {
 
     // re-render board
     renderGame(selectedRows, selectedCols);
-    console.log(colHints, rowHints)
 }
 
 function increaseBoardWidth(selectedCols) {
