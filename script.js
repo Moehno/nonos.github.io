@@ -405,8 +405,10 @@ function changeInputMethod(interactionFunction) {
 
 /* ------------ CLICK INPUT -------------*/
 
+// input type which only colour one box at a time and toggles its state
 function boardClickInput(signal) {
-    let targetElement;
+    let targetElement = "";
+    let sourceState = "";
     let captureStarted = false;
 
     function onPointerDown(event) {
@@ -414,6 +416,7 @@ function boardClickInput(signal) {
         domPlayfield.setPointerCapture(event.pointerId);
         captureStarted = true;
 
+        // if box was found, set and highlight target
         let capturedBox = event.target.closest(".playfieldBox");
         if (capturedBox) {
             targetElement = capturedBox;
@@ -423,6 +426,7 @@ function boardClickInput(signal) {
 
     function onPointerMove(event) {
         if (captureStarted) {
+            // if a new target box is found, update target and remove old target
             let capturedBox = getBoxAt(event.clientX, event.clientY);
             if (capturedBox && capturedBox !== targetElement) {
                 targetElement.classList.remove("highlighted");
@@ -439,12 +443,21 @@ function boardClickInput(signal) {
             console.log("Click Input: Capture ended");
             captureStarted = false;
 
+            // if a target was found, colour target accordingly
             if (targetElement) {
+                const targetRow = targetElement.dataset.row;
+                const targetCol = targetElement.dataset.col;
+                sourceState = board[targetRow][targetCol];
+
                 console.log("Click Input: Element found: ", targetElement);
                 targetElement.classList.remove("highlighted");
-                updateBoxChecks(board[targetElement.dataset.row][targetElement.dataset.col], targetElement);
+                updateBoxChecks(sourceState, targetElement);
             }
         }
+
+        // reset variables
+        targetElement = "";
+        sourceState = "";
     }
 
     domPlayfield.addEventListener("pointerdown", onPointerDown, { signal });
@@ -455,8 +468,11 @@ function boardClickInput(signal) {
 
 /* ------------- DRAG INPUT -------------*/
 
+// input type that takes any amount of boxes while holding down pointer
+// on pointer release, all targets states become the inverted sourceState from the first element
 function boardDragInput(signal) {
     let captureStarted = false;
+    let sourceState = "";
     let targetElements = [];
 
     function onPointerDown(event) {
@@ -464,12 +480,14 @@ function boardDragInput(signal) {
         domPlayfield.setPointerCapture(event.pointerId);
         captureStarted = true;
 
+        // highlight first target and add to target array
         let capturedBox = event.target.closest(".playfieldBox");
         if (capturedBox) addHighlight(capturedBox, targetElements);
     }
 
     function onPointerMove(event) {
         if (captureStarted) {
+            // highlight any new box and add to target array
             let capturedBox = getBoxAt(event.clientX, event.clientY);
             if (capturedBox && !targetElements.includes(capturedBox)) {
                 addHighlight(capturedBox, targetElements);
@@ -484,26 +502,24 @@ function boardDragInput(signal) {
             captureStarted = false;
             console.log("Drag Input: Capture Ended");
 
-            switch (targetElements.length) {
-                case 0:
-                    console.log("Drag Input: No Elements found");
-                    break;
+            // get state from first element, then colour all elements accordingly
+            if (targetElements.length > 0) {
+                const targetRow = targetElements[0].dataset.row;
+                const targetCol = targetElements[0].dataset.col;
+                sourceState = board[targetRow][targetCol];
 
-                case 1:
-                    console.log("Drag Input: One Element Found: ", targetElements[0]);
-                    targetElements[0].classList.remove("highlighted");
-                    updateBoxChecks(board[targetElements[0].dataset.row][targetElements[0].dataset.col], targetElements);
-                    break;
+                console.log("Drag input: Element(s) found: ", targetElements);
 
-                default:
-                    console.log("Drag Input: Multiple Elements found: ", targetElements);
-                    targetElements.forEach(element => {
-                        element.classList.remove("highlighted");
-                    });
-                    updateBoxChecks(board[targetElements[0].dataset.row][targetElements[0].dataset.col], targetElements);
-                    break;
-            }
+                targetElements.forEach(element => {
+                    element.classList.remove("highlighted");
+                });
+                updateBoxChecks(board[targetRow][targetCol], targetElements);
+
+            } else (console.log("Drag Input: No Elements found"));
+
+            // reset variables
             targetElements.length = 0;
+            sourceState = "";
         }
     }
 
@@ -515,12 +531,12 @@ function boardDragInput(signal) {
 
 /* ------------- LINE INPUT -------------*/
 
+// input type which will use the start element as anchor to get a line of elements closest to cursor
+// on pointer release, all targets states become the inverted sourceState from the first element
 function boardLineInput(signal) {
-    let targetElement;
+    let targetElement = "";
     let captureStarted = false;
-
     let startElement = {};
-
     let rowElements = [];
     let colElements = [];
     let highlightedElements = [];
@@ -531,9 +547,10 @@ function boardLineInput(signal) {
         domPlayfield.setPointerCapture(event.pointerId);
         captureStarted = true;
 
+        // if box was found, set startelement
         let capturedBox = event.target.closest(".playfieldBox");
         if (capturedBox) {
-            setStartElement(capturedBox);
+            cacheStartData(capturedBox);
             addHighlight(capturedBox, highlightedElements);
         }
     }
@@ -542,16 +559,19 @@ function boardLineInput(signal) {
         if (captureStarted) {
             let capturedBox = getBoxAt(event.clientX, event.clientY);
 
-            if (!startElement && capturedBox) setStartElement(capturedBox);
+            // if no start element was found yet, set startelement
+            if (!startElement && capturedBox) cacheStartData(capturedBox);
             else if (capturedBox) {
+                // decide which axis is closer to cursor
                 let deltaX = Math.abs(event.clientX - startElement.x);
                 let deltaY = Math.abs(event.clientY - startElement.y);
-                tempArray = [];
+                let tempArray = [];
 
                 if (deltaX >= deltaY) {
+                    // get element in current axis closest to cursor
                     targetElement = getTargetElement("x", rowElements, event.clientX);
 
-                    // save current selection temporarily
+                    // get all elements between start and target, save current selection temporarily
                     tempArray = rowElements
                         .filter(element => (element.col >= Math.min(startElement.col, targetElement.col)) && (element.col <= Math.max(startElement.col, targetElement.col)))
                         .map(element => element.el);
@@ -567,9 +587,10 @@ function boardLineInput(signal) {
                         .forEach(element => addHighlight(element, highlightedElements));
 
                 } else {
+                    // get element in current axis closest to cursor
                     targetElement = getTargetElement("y", colElements, event.clientY);
 
-                    // save current selection temporarily
+                    // get all elements between start and target, save current selection temporarily
                     tempArray = colElements
                         .filter(element => (element.row >= Math.min(startElement.row, targetElement.row)) && (element.row <= Math.max(startElement.row, targetElement.row)))
                         .map(element => element.el);
@@ -595,60 +616,80 @@ function boardLineInput(signal) {
             console.log("Line Input: Capture Ended");
             captureStarted = false;
 
+            // get state from first element, then colour all elements accordingly
             if (highlightedElements.length > 0) {
+                const targetRow = startElement.row;
+                const targetCol = startElement.col;
+                sourceState = board[targetRow][targetCol];
+
                 console.log("Line Input: Element(s) found: ", highlightedElements);
 
                 highlightedElements.forEach(element => {
                     element.classList.remove("highlighted");
                 })
 
-                updateBoxChecks(board[startElement.row][startElement.col], highlightedElements);
-
-                highlightedElements.length = 0;
+                updateBoxChecks(sourceState, highlightedElements);
             }
         }
+
+        // reset variables
+        targetElement = "";
+        sourceState = "";
+        captureStarted = false;
+        startElement = {};
+        rowElements = [];
+        colElements = [];
+        highlightedElements.length = 0;
     }
 
     /* ---------- LOCAL FUNCTIONS -----------*/
 
+    // helper function to get the element from an array closest to event
     function getTargetElement(axis, array, eventCoords) {
-        return array.reduce((previousValue, currentValue) => {
-            if (Math.abs(currentValue[axis] - eventCoords) < Math.abs(previousValue[axis] - eventCoords)) {
-                return currentValue;
-            } else return previousValue;
-        });
+        if (array.length > 0) {
+            return array.reduce((previousValue, currentValue) => {
+                if (Math.abs(currentValue[axis] - eventCoords) < Math.abs(previousValue[axis] - eventCoords)) {
+                    return currentValue;
+                } else return previousValue;
+            });
+        } else return array;
     }
 
-    function setStartElement(element) {
+    // helper function to cache data rather so it doesnt have to repeatedly get calcualted
+    function cacheStartData(element) {
+        // cache start element data
+        const rect = element.getBoundingClientRect();
         startElement.el = element;
         startElement.row = element.dataset.row;
         startElement.col = element.dataset.col;
-        startElement.rect = element.getBoundingClientRect();
-        startElement.x = startElement.rect.x + startElement.rect.width / 2;
-        startElement.y = startElement.rect.y + startElement.rect.height / 2;
+        startElement.x = rect.x + rect.width / 2;
+        startElement.y = rect.y + rect.height / 2;
 
+        // cache elements in same row or col as start element
         rowElements = Array.from(domPlayfield.querySelectorAll(`[data-row="${element.dataset.row}"]`));
         colElements = Array.from(domPlayfield.querySelectorAll(`[data-col="${element.dataset.col}"]`));
 
+        // cache relevant data for each row element
         rowElements = rowElements.map(rowElement => {
-            const rect = rowElement.getBoundingClientRect();
+            const elRect = rowElement.getBoundingClientRect();
             return {
                 "el": rowElement,
                 "row": rowElement.dataset.row,
                 "col": rowElement.dataset.col,
-                "x": rect.x + rect.width / 2,
-                "y": rect.y + rect.height / 2
+                "x": elRect.x + elRect.width / 2,
+                "y": elRect.y + elRect.height / 2
             };
         });
 
+        // cache relevant data for each col element
         colElements = colElements.map(colElement => {
-            const rect = colElement.getBoundingClientRect();
+            const elRect = colElement.getBoundingClientRect();
             return {
                 "el": colElement,
                 "row": colElement.dataset.row,
                 "col": colElement.dataset.col,
-                "x": rect.x + rect.width / 2,
-                "y": rect.y + rect.height / 2
+                "x": elRect.x + elRect.width / 2,
+                "y": elRect.y + elRect.height / 2
             };
         });
     }
@@ -662,7 +703,9 @@ function boardLineInput(signal) {
 /* ------------- FILL INPUT --------------*/
 
 function boardFillInput(signal) {
-    let targetElement;
+    let startElement = "";
+    let sourceState = "";
+    let targetElements = [];
     let captureStarted = false;
 
     function onPointerDown(event) {
@@ -670,19 +713,22 @@ function boardFillInput(signal) {
         domPlayfield.setPointerCapture(event.pointerId);
         captureStarted = true;
 
+        // if box was found, set startelement
         let capturedBox = event.target.closest(".playfieldBox");
         if (capturedBox) {
-            targetElement = capturedBox;
-            targetElement.classList.add("highlighted");
+            startElement = capturedBox;
+            startElement.classList.add("highlighted");
         }
     }
 
     function onPointerMove(event) {
         if (captureStarted) {
+            // if a new target box is found, update target and remove old target
             let capturedBox = getBoxAt(event.clientX, event.clientY);
-            if (capturedBox && capturedBox !== targetElement) {
-                targetElement.classList.remove("highlighted");
-                targetElement = capturedBox;
+
+            if (capturedBox && capturedBox !== startElement) {
+                startElement.classList.remove("highlighted");
+                startElement = capturedBox;
                 capturedBox.classList.add("highlighted");
             }
         }
@@ -695,12 +741,74 @@ function boardFillInput(signal) {
             console.log("Click Input: Capture ended");
             captureStarted = false;
 
-            if (targetElement) {
-                console.log("Click Input: Element found: ", targetElement);
-                targetElement.classList.remove("highlighted");
-                updateBoxChecks(board[targetElement.dataset.row][targetElement.dataset.col], targetElement);
+            if (startElement) {
+                const startRow = startElement.dataset.row;
+                const startCol = startElement.dataset.col;
+                sourceState = board[startRow][startCol];
+
+                // find an area of boxes around target element with the same state as target element, then toggle state for all elements
+                console.log("Click Input: Element found: ", startElement);
+                startElement.classList.remove("highlighted");
+                targetElements = getFillElements(sourceState, startElement);
+                updateBoxChecks(sourceState, targetElements);
             }
         }
+
+        // reset variables
+        startElement = "";
+        sourceState = "";
+        targetElements.length = 0;
+    }
+
+    /* ---------- LOCAL FUNCTIONS -----------*/
+
+    function getFillElements(sourceState, firstEl) {
+        if (!firstEl) return [];
+
+        const directions = [
+            { "x": 0, "y": -1 },
+            { "x": 1, "y": 0 },
+            { "x": 0, "y": 1 },
+            { "x": -1, "y": 0 }
+            // diagonals, may be added
+            // { "x": -1, "y": -1 }
+            // { "x": 1, "y": -1 }
+            // { "x": -1, "y": 1 }
+            // { "x": 1, "y": 1 }
+        ];
+
+        let targetElements = [firstEl];
+        let remainingElements = [firstEl];
+        let searchedElements = new Set([firstEl]);
+
+        while (remainingElements.length > 0) {
+            let nextEl = remainingElements.shift();
+
+            directions.forEach(direction => {
+                const currentRow = Number(nextEl.dataset.row) + direction.y;
+                const currentCol = Number(nextEl.dataset.col) + direction.x;
+
+                // check boundaries
+                if ((currentRow) >= 0 &&
+                    (currentRow) < rowHints.length &&
+                    (currentCol) >= 0 &&
+                    (currentCol) < colHints.length) {
+
+                    const currentElement = boardInDocument[currentRow][currentCol];
+                    const elementState = board[currentRow][currentCol];
+
+                    // if element has already been tested, return
+                    if (searchedElements.has(currentElement)) return;
+                    searchedElements.add(currentElement);
+
+                    // only push targets identical to sourceState
+                    if (!(elementState === sourceState)) return;
+                    targetElements.push(currentElement);
+                    remainingElements.push(currentElement);
+                }
+            });
+        }
+        return targetElements;
     }
 
     domPlayfield.addEventListener("pointerdown", onPointerDown, { signal });
